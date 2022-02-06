@@ -1,0 +1,74 @@
+{
+    "sourceFile": "README.md",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 14,
+            "patches": [
+                {
+                    "date": 1644160646979,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1644160676326,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,5 +6,5 @@\n \n Entry point: `stereo_vo.cpp`\n \n We first initialize the projection matrix parameters by using the\n-parameters in the calib_yaml file\n\\ No newline at end of file\n+parameters in the calib_yaml file.\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1644160808680,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,5 +6,6 @@\n \n Entry point: `stereo_vo.cpp`\n \n We first initialize the projection matrix parameters by using the\n-parameters in the calib_yaml file.\n\\ No newline at end of file\n+parameters in the calib_yaml file.\n+Then we setup a stereo VO object. \n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1644160874241,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -7,5 +7,5 @@\n Entry point: `stereo_vo.cpp`\n \n We first initialize the projection matrix parameters by using the\n parameters in the calib_yaml file.\n-Then we setup a stereo VO object. \n\\ No newline at end of file\n+Then we setup a stereo VO object with these projection matricies.\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1644161070609,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -7,5 +7,8 @@\n Entry point: `stereo_vo.cpp`\n \n We first initialize the projection matrix parameters by using the\n parameters in the calib_yaml file.\n-Then we setup a stereo VO object with these projection matricies.\n\\ No newline at end of file\n+Then we setup a stereo VO object with these projection matricies, and set up a callback\n+function to periodically update the stereo VO\n+object with cvImages of two images obtained from the camera.\n+\n"
+                },
+                {
+                    "date": 1644161168333,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -3,12 +3,16 @@\n roslaunch stereo_visual_odometry powerranger.launch \n \n # Structure\n \n-Entry point: `stereo_vo.cpp`\n+## Entry point: `stereo_vo.cpp`\n \n We first initialize the projection matrix parameters by using the\n parameters in the calib_yaml file.\n Then we setup a stereo VO object with these projection matricies, and set up a callback\n function to periodically update the stereo VO\n object with cvImages of two images obtained from the camera.\n \n+The setup is done in \n+#### StereoVO::run()\n+\n+\n"
+                },
+                {
+                    "date": 1644161305684,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -12,7 +12,12 @@\n function to periodically update the stereo VO\n object with cvImages of two images obtained from the camera.\n \n The setup is done in \n-#### StereoVO::run()\n+### StereoVO::run()\n \n+first we call `matchingFeatures` to track the \n+most relevant features with FAST detector. We\n+use `bucketingFeatures` to ensure a good spread\n+of features on the image, and use `circularMatching` to ensure that all\n+the points are on all 4 images [l/r, past/present]\n \n"
+                },
+                {
+                    "date": 1644161401629,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -11,13 +11,13 @@\n Then we setup a stereo VO object with these projection matricies, and set up a callback\n function to periodically update the stereo VO\n object with cvImages of two images obtained from the camera.\n \n-The setup is done in \n ### StereoVO::run()\n \n-first we call `matchingFeatures` to track the \n+first we call `matchingFeatures` to track the\n most relevant features with FAST detector. We\n use `bucketingFeatures` to ensure a good spread\n of features on the image, and use `circularMatching` to ensure that all\n the points are on all 4 images [l/r, past/present]\n \n+Next we \n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1644161907909,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -19,5 +19,12 @@\n use `bucketingFeatures` to ensure a good spread\n of features on the image, and use `circularMatching` to ensure that all\n the points are on all 4 images [l/r, past/present]\n \n-Next we \n\\ No newline at end of file\n+This gives us a set of 2d points in camera coordinates, so a triangulation is used between the\n+two cameras to map the coordinates into 3d.\n+\n+However, this is surely a noisy transform. We\n+use RANSAC in `trackingFrame2Frame` to find the least square transformation from camera into real world coordinates.\n+\n+If the rotation is small (for some reason it's detected with euler angles instead of the actual\n+angle change, maybe just bad design?)\n"
+                },
+                {
+                    "date": 1644162327109,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -26,5 +26,8 @@\n However, this is surely a noisy transform. We\n use RANSAC in `trackingFrame2Frame` to find the least square transformation from camera into real world coordinates.\n \n If the rotation is small (for some reason it's detected with euler angles instead of the actual\n-angle change, maybe just bad design?)\n+angle change, maybe just bad design?), then we\n+call `integrateOdometryStereo`, which updates the\n+current frame pose according to the given transform.\n+It doesn't do this if the `scale` variable is very small or big though. Checking if scale is small makes very little sense because (despite it's name), scale measures the magnitude of the translation vector.\n"
+                },
+                {
+                    "date": 1644162333853,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -29,5 +29,5 @@\n If the rotation is small (for some reason it's detected with euler angles instead of the actual\n angle change, maybe just bad design?), then we\n call `integrateOdometryStereo`, which updates the\n current frame pose according to the given transform.\n-It doesn't do this if the `scale` variable is very small or big though. Checking if scale is small makes very little sense because (despite it's name), scale measures the magnitude of the translation vector.\n+It doesn't do this if the `scale` variable is very small or big though. Checking if scale is small makes very little sense though, because (despite it's name), scale measures the magnitude of the translation vector.\n"
+                },
+                {
+                    "date": 1644162474577,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -30,4 +30,6 @@\n angle change, maybe just bad design?), then we\n call `integrateOdometryStereo`, which updates the\n current frame pose according to the given transform.\n It doesn't do this if the `scale` variable is very small or big though. Checking if scale is small makes very little sense though, because (despite it's name), scale measures the magnitude of the translation vector.\n+\n+Finally, we send our transform out to update the camera and odometry systems.\n"
+                },
+                {
+                    "date": 1644162566499,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -29,7 +29,7 @@\n If the rotation is small (for some reason it's detected with euler angles instead of the actual\n angle change, maybe just bad design?), then we\n call `integrateOdometryStereo`, which updates the\n current frame pose according to the given transform.\n-It doesn't do this if the `scale` variable is very small or big though. Checking if scale is small makes very little sense though, because (despite it's name), scale measures the magnitude of the translation vector.\n+`integrateOdometryStereo` doesn't do this if the `scale` variable is very small or big though. Checking if scale is small makes very little sense though, because (despite it's name), scale measures the magnitude of the translation vector.\n \n Finally, we send our transform out to update the camera and odometry systems.\n"
+                },
+                {
+                    "date": 1644162631621,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -29,7 +29,11 @@\n If the rotation is small (for some reason it's detected with euler angles instead of the actual\n angle change, maybe just bad design?), then we\n call `integrateOdometryStereo`, which updates the\n current frame pose according to the given transform.\n+---\n+**NOTE**\n `integrateOdometryStereo` doesn't do this if the `scale` variable is very small or big though. Checking if scale is small makes very little sense though, because (despite it's name), scale measures the magnitude of the translation vector.\n \n+---\n+\n Finally, we send our transform out to update the camera and odometry systems.\n"
+                },
+                {
+                    "date": 1644162734289,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -29,11 +29,8 @@\n If the rotation is small (for some reason it's detected with euler angles instead of the actual\n angle change, maybe just bad design?), then we\n call `integrateOdometryStereo`, which updates the\n current frame pose according to the given transform.\n----\n-**NOTE**\n-`integrateOdometryStereo` doesn't do this if the `scale` variable is very small or big though. Checking if scale is small makes very little sense though, because (despite it's name), scale measures the magnitude of the translation vector.\n \n----\n+> 📝 `integrateOdometryStereo` doesn't do this if the `scale` variable is very small or big. Checking if scale is small makes very little sense though, because (despite it's name), scale measures the magnitude of the translation vector.\n \n Finally, we send our transform out to update the camera and odometry systems.\n"
+                }
+            ],
+            "date": 1644160646979,
+            "name": "Commit-0",
+            "content": "# stereo_visual_odometry\nStereo Visual Odometry in ROS  \nroslaunch stereo_visual_odometry powerranger.launch \n\n# Structure\n\nEntry point: `stereo_vo.cpp`\n\nWe first initialize the projection matrix parameters by using the\nparameters in the calib_yaml file"
+        }
+    ]
+}

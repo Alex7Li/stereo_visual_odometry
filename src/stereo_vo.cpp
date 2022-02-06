@@ -129,7 +129,7 @@ void StereoVO::run()
     frame_id++;
 }
 
-
+// Entry point
 int main(int argc, char **argv)
 {
 
@@ -145,6 +145,7 @@ int main(int argc, char **argv)
         std::cerr << "no calib yaml" << std::endl;
         throw;
     }
+    // Get default projection matrix parameters from file storage
     cv::FileStorage fs(filename, cv::FileStorage::READ);
     if(!(fs.isOpened()))
     {
@@ -162,7 +163,7 @@ int main(int argc, char **argv)
     cv::Mat projMatrr = (cv::Mat_<float>(3, 4) << fx, 0., cx, bf, 0., fy, cy, 0., 0,  0., 1., 0.);
 
     // initialize VO object
-    StereoVO stereo_vo(projMatrl,projMatrr);
+    StereoVO stereo_vo(projMatrl, projMatrr);
 
     // using message_filters to get stereo callback on one topic
     message_filters::Subscriber<sensor_msgs::Image> image1_sub(n, "left/image_rect", 1);
@@ -174,7 +175,7 @@ int main(int argc, char **argv)
     sync.registerCallback(boost::bind(&StereoVO::stereo_callback, &stereo_vo, _1, _2));
 
     std::cout << "Stereo VO Node Initialized!" << std::endl;
-    
+  
     ros::spin();
     return 0;
 }

@@ -1,6 +1,8 @@
 #include "stereo_visual_odometry/visualOdometry.h"
 using namespace cv;
 
+// Alex: How does a vector transform into a rotation matrix??
+// actually this function is never used
 cv::Mat euler2rot(cv::Mat& rotationMatrix, const cv::Mat & euler)
 {
 

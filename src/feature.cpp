@@ -206,6 +206,8 @@ void circularMatching_gpu(cv::Mat img_l_0, cv::Mat img_r_0, cv::Mat img_l_1, cv:
 }
 #endif
 
+// Update the current features by including at most features_per_bucket features per bucket of the original image,
+// to ensure a good distribution of features throughout the image.
 void bucketingFeatures(cv::Mat& image, FeatureSet& current_features, int bucket_size, int features_per_bucket)
 {
     // This function buckets features
@@ -251,7 +253,9 @@ void bucketingFeatures(cv::Mat& image, FeatureSet& current_features, int bucket_
     }
 
 }
-
+/*
+Update the current features with features detected in the given image.
+*/
 void appendNewFeatures(cv::Mat& image, FeatureSet& current_features)
 {
     std::vector<cv::Point2f>  points_new;
