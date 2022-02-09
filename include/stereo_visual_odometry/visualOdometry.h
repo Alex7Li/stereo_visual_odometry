@@ -23,7 +23,11 @@
 
 #include "ceres/ceres.h"
 #include "ceres/rotation.h"
-
+/*
+* Input: 4 images and the set of currently tracked features, as
+* well as references to 4 vectors of points (by reference).
+* Return: vectors of features shared between the 4 images
+*/
 void matchingFeatures(cv::Mat& imageLeft_t0, cv::Mat& imageRight_t0,
                       cv::Mat& imageLeft_t1, cv::Mat& imageRight_t1, 
                       FeatureSet& currentVOFeatures,

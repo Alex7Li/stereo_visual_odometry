@@ -96,6 +96,7 @@ void deleteUnmatchFeaturesCircle(std::vector<cv::Point2f>& points0, std::vector<
         cv::Point2f pt3 = points3.at(i- indexCorrection);
         cv::Point2f pt0_r = points0_return.at(i- indexCorrection);
 
+        // Why are we only checking the 0 boundaries? What about pt3.x > the x size of the image? ~Alex
         if ((status3.at(i) == 0)||(pt3.x<0)||(pt3.y<0)||
             (status2.at(i) == 0)||(pt2.x<0)||(pt2.y<0)||
             (status1.at(i) == 0)||(pt1.x<0)||(pt1.y<0)||
@@ -104,6 +105,8 @@ void deleteUnmatchFeaturesCircle(std::vector<cv::Point2f>& points0, std::vector<
             if((pt0.x<0)||(pt0.y<0)||(pt1.x<0)||(pt1.y<0)||(pt2.x<0)||(pt2.y<0)||(pt3.x<0)||(pt3.y<0))    
             {
                 status3.at(i) = 0;
+                // Huh?? Why are we changing the status and then deleting the element at i? A bug??
+                // We don't even use status outside of this function so it seems to do nothing... ~Alex
             }
             points0.erase (points0.begin() + (i - indexCorrection));
             points1.erase (points1.begin() + (i - indexCorrection));

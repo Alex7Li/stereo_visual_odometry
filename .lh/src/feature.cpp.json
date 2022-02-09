@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 1,
+            "activePatchIndex": 7,
             "patches": [
                 {
                     "date": 1644010023652,
@@ -12,6 +12,30 @@
                 {
                     "date": 1644010154703,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -205,8 +205,10 @@\n                         status0, status1, status2, status3, current_features.ages);\n }\n #endif\n \n+// Update the current features by including at most features_per_bucket features per bucket of the original image,\n+// to ensure a good distribution of features throughout the image.\n void bucketingFeatures(cv::Mat& image, FeatureSet& current_features, int bucket_size, int features_per_bucket)\n {\n     // This function buckets features\n     // image: only use for getting dimension of the image\n@@ -250,9 +252,11 @@\n         }\n     }\n \n }\n-\n+/*\n+Update the current features with features detected in the given image.\n+*/\n void appendNewFeatures(cv::Mat& image, FeatureSet& current_features)\n {\n     std::vector<cv::Point2f>  points_new;\n     featureDetectionFast(image, points_new);\n"
+                },
+                {
+                    "date": 1644296111526,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -95,8 +95,9 @@\n         cv::Point2f pt2 = points2.at(i- indexCorrection);\n         cv::Point2f pt3 = points3.at(i- indexCorrection);\n         cv::Point2f pt0_r = points0_return.at(i- indexCorrection);\n \n+        // Why are we only checking the 0 boundaries? What about pt3.x > the x size of the image?\n         if ((status3.at(i) == 0)||(pt3.x<0)||(pt3.y<0)||\n             (status2.at(i) == 0)||(pt2.x<0)||(pt2.y<0)||\n             (status1.at(i) == 0)||(pt1.x<0)||(pt1.y<0)||\n             (status0.at(i) == 0)||(pt0.x<0)||(pt0.y<0))   \n"
+                },
+                {
+                    "date": 1644296153386,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -104,8 +104,10 @@\n         {\n             if((pt0.x<0)||(pt0.y<0)||(pt1.x<0)||(pt1.y<0)||(pt2.x<0)||(pt2.y<0)||(pt3.x<0)||(pt3.y<0))    \n             {\n                 status3.at(i) = 0;\n+                // Huh?? Why are we changing the status and then deleting the element at i? A bug??\n+\n             }\n             points0.erase (points0.begin() + (i - indexCorrection));\n             points1.erase (points1.begin() + (i - indexCorrection));\n             points2.erase (points2.begin() + (i - indexCorrection));\n"
+                },
+                {
+                    "date": 1644296260617,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -105,9 +105,8 @@\n             if((pt0.x<0)||(pt0.y<0)||(pt1.x<0)||(pt1.y<0)||(pt2.x<0)||(pt2.y<0)||(pt3.x<0)||(pt3.y<0))    \n             {\n                 status3.at(i) = 0;\n                 // Huh?? Why are we changing the status and then deleting the element at i? A bug??\n-\n             }\n             points0.erase (points0.begin() + (i - indexCorrection));\n             points1.erase (points1.begin() + (i - indexCorrection));\n             points2.erase (points2.begin() + (i - indexCorrection));\n"
+                },
+                {
+                    "date": 1644296285496,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -105,8 +105,10 @@\n             if((pt0.x<0)||(pt0.y<0)||(pt1.x<0)||(pt1.y<0)||(pt2.x<0)||(pt2.y<0)||(pt3.x<0)||(pt3.y<0))    \n             {\n                 status3.at(i) = 0;\n                 // Huh?? Why are we changing the status and then deleting the element at i? A bug??\n+                // We don't even use status outside of this function so it seems to just\n+                // mess up the next iteration of the loop\n             }\n             points0.erase (points0.begin() + (i - indexCorrection));\n             points1.erase (points1.begin() + (i - indexCorrection));\n             points2.erase (points2.begin() + (i - indexCorrection));\n"
+                },
+                {
+                    "date": 1644296298694,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -105,10 +105,9 @@\n             if((pt0.x<0)||(pt0.y<0)||(pt1.x<0)||(pt1.y<0)||(pt2.x<0)||(pt2.y<0)||(pt3.x<0)||(pt3.y<0))    \n             {\n                 status3.at(i) = 0;\n                 // Huh?? Why are we changing the status and then deleting the element at i? A bug??\n-                // We don't even use status outside of this function so it seems to just\n-                // mess up the next iteration of the loop\n+                // We don't even use status outside of this function so it seems to do nothing\n             }\n             points0.erase (points0.begin() + (i - indexCorrection));\n             points1.erase (points1.begin() + (i - indexCorrection));\n             points2.erase (points2.begin() + (i - indexCorrection));\n"
+                },
+                {
+                    "date": 1644296311597,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -95,9 +95,9 @@\n         cv::Point2f pt2 = points2.at(i- indexCorrection);\n         cv::Point2f pt3 = points3.at(i- indexCorrection);\n         cv::Point2f pt0_r = points0_return.at(i- indexCorrection);\n \n-        // Why are we only checking the 0 boundaries? What about pt3.x > the x size of the image?\n+        // Why are we only checking the 0 boundaries? What about pt3.x > the x size of the image? ~Alex\n         if ((status3.at(i) == 0)||(pt3.x<0)||(pt3.y<0)||\n             (status2.at(i) == 0)||(pt2.x<0)||(pt2.y<0)||\n             (status1.at(i) == 0)||(pt1.x<0)||(pt1.y<0)||\n             (status0.at(i) == 0)||(pt0.x<0)||(pt0.y<0))   \n@@ -105,9 +105,9 @@\n             if((pt0.x<0)||(pt0.y<0)||(pt1.x<0)||(pt1.y<0)||(pt2.x<0)||(pt2.y<0)||(pt3.x<0)||(pt3.y<0))    \n             {\n                 status3.at(i) = 0;\n                 // Huh?? Why are we changing the status and then deleting the element at i? A bug??\n-                // We don't even use status outside of this function so it seems to do nothing\n+                // We don't even use status outside of this function so it seems to do nothing... ~Alex\n             }\n             points0.erase (points0.begin() + (i - indexCorrection));\n             points1.erase (points1.begin() + (i - indexCorrection));\n             points2.erase (points2.begin() + (i - indexCorrection));\n"
                 }
             ],
             "date": 1644010023652,
