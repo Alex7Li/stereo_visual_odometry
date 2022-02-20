@@ -1,0 +1,30 @@
+{
+    "sourceFile": ".vscode/settings.json",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 3,
+            "patches": [
+                {
+                    "date": 1645283544838,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1645289733542,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,7 +1,12 @@\n {\n   \"files.associations\": {\n     \"deque\": \"cpp\",\n     \"string\": \"cpp\",\n-    \"vector\": \"cpp\"\n+    \"vector\": \"cpp\",\n+    \"array\": \"cpp\",\n+    \"list\": \"cpp\",\n+    \"unordered_map\": \"cpp\",\n+    \"string_view\": \"cpp\",\n+    \"initializer_list\": \"cpp\"\n   }\n }\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1645290552283,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,7 +6,8 @@\n     \"array\": \"cpp\",\n     \"list\": \"cpp\",\n     \"unordered_map\": \"cpp\",\n     \"string_view\": \"cpp\",\n-    \"initializer_list\": \"cpp\"\n+    \"initializer_list\": \"cpp\",\n+    \"*.tcc\": \"cpp\"\n   }\n }\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1645392275723,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -7,7 +7,53 @@\n     \"list\": \"cpp\",\n     \"unordered_map\": \"cpp\",\n     \"string_view\": \"cpp\",\n     \"initializer_list\": \"cpp\",\n-    \"*.tcc\": \"cpp\"\n+    \"*.tcc\": \"cpp\",\n+    \"atomic\": \"cpp\",\n+    \"bit\": \"cpp\",\n+    \"cctype\": \"cpp\",\n+    \"chrono\": \"cpp\",\n+    \"clocale\": \"cpp\",\n+    \"cmath\": \"cpp\",\n+    \"compare\": \"cpp\",\n+    \"complex\": \"cpp\",\n+    \"concepts\": \"cpp\",\n+    \"cstdarg\": \"cpp\",\n+    \"cstddef\": \"cpp\",\n+    \"cstdint\": \"cpp\",\n+    \"cstdio\": \"cpp\",\n+    \"cstdlib\": \"cpp\",\n+    \"cstring\": \"cpp\",\n+    \"ctime\": \"cpp\",\n+    \"cwchar\": \"cpp\",\n+    \"cwctype\": \"cpp\",\n+    \"map\": \"cpp\",\n+    \"set\": \"cpp\",\n+    \"exception\": \"cpp\",\n+    \"algorithm\": \"cpp\",\n+    \"functional\": \"cpp\",\n+    \"iterator\": \"cpp\",\n+    \"memory\": \"cpp\",\n+    \"memory_resource\": \"cpp\",\n+    \"numeric\": \"cpp\",\n+    \"random\": \"cpp\",\n+    \"ratio\": \"cpp\",\n+    \"system_error\": \"cpp\",\n+    \"tuple\": \"cpp\",\n+    \"type_traits\": \"cpp\",\n+    \"utility\": \"cpp\",\n+    \"fstream\": \"cpp\",\n+    \"iomanip\": \"cpp\",\n+    \"iosfwd\": \"cpp\",\n+    \"iostream\": \"cpp\",\n+    \"istream\": \"cpp\",\n+    \"limits\": \"cpp\",\n+    \"new\": \"cpp\",\n+    \"numbers\": \"cpp\",\n+    \"ostream\": \"cpp\",\n+    \"sstream\": \"cpp\",\n+    \"stdexcept\": \"cpp\",\n+    \"streambuf\": \"cpp\",\n+    \"typeinfo\": \"cpp\"\n   }\n }\n\\ No newline at end of file\n"
+                }
+            ],
+            "date": 1645283544838,
+            "name": "Commit-0",
+            "content": "{\n  \"files.associations\": {\n    \"deque\": \"cpp\",\n    \"string\": \"cpp\",\n    \"vector\": \"cpp\"\n  }\n}"
+        }
+    ]
+}

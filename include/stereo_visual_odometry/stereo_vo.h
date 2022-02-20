@@ -37,8 +37,6 @@ class StereoVO
 		// stereo pair callback
 		void stereo_callback(const sensor_msgs::ImageConstPtr& image_left, const sensor_msgs::ImageConstPtr& image_right);
 
-		// runs the pipeline
-		void run();
 
 	private:
 

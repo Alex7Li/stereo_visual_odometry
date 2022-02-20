@@ -1,0 +1,26 @@
+{
+    "sourceFile": "include/stereo_visual_odometry/stereo_vo.h",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 2,
+            "patches": [
+                {
+                    "date": 1645280231358,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1645281059279,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -63,7 +63,7 @@\n \t\t// for timing code\n \t\tclock_t t_a, t_b;\n \t\tclock_t t_1, t_2;\n \n-    // runs the pipeline\n+    // runs the pipeline one frame\n \t\tvoid run();\n };\n"
+                },
+                {
+                    "date": 1645282910596,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -62,8 +62,5 @@\n \n \t\t// for timing code\n \t\tclock_t t_a, t_b;\n \t\tclock_t t_1, t_2;\n-\n-    // runs the pipeline one frame\n-\t\tvoid run();\n };\n"
+                }
+            ],
+            "date": 1645280231358,
+            "name": "Commit-0",
+            "content": "#include \"ros/ros.h\"\n#include \"sensor_msgs/Image.h\"\n#include <tf/transform_broadcaster.h>\n#include <message_filters/subscriber.h>\n#include <message_filters/synchronizer.h>\n#include <message_filters/sync_policies/approximate_time.h>\n#include <cv_bridge/cv_bridge.h>\n\n#include \"opencv2/video/tracking.hpp\"\n#include \"opencv2/imgproc/imgproc.hpp\"\n#include \"opencv2/highgui/highgui.hpp\"\n#include \"opencv2/features2d/features2d.hpp\"\n#include \"opencv2/calib3d/calib3d.hpp\"\n\n#include <iostream>\n#include <ctype.h>\n#include <algorithm>\n#include <iterator>\n#include <vector>\n#include <ctime>\n#include <sstream>\n#include <fstream>\n#include <string>\n\n#include \"feature.h\"\n#include \"utils.h\"\n#include \"visualOdometry.h\"\n\nclass StereoVO\n{\n\tpublic:\n\n\t\tStereoVO(cv::Mat projMatrl_, cv::Mat projMatrr_);\n\n\t\tcv::Mat rosImage2CvMat(sensor_msgs::ImageConstPtr img);\n\n\t\t// stereo pair callback\n\t\tvoid stereo_callback(const sensor_msgs::ImageConstPtr& image_left, const sensor_msgs::ImageConstPtr& image_right);\n\n\n\tprivate:\n\n\t\tint frame_id = 0;\n\n\t\t// projection matrices for camera\n\t\tcv::Mat projMatrl, projMatrr;\n\n\t\t// images of current and next time step\n\t\tcv::Mat imageRight_t0,  imageLeft_t0;\n\t\tcv::Mat imageRight_t1,  imageLeft_t1;\n\n\t\t// initial pose variables\n\t\tcv::Mat rotation = cv::Mat::eye(3, 3, CV_64F);\n\t\tcv::Mat translation = cv::Mat::zeros(3, 1, CV_64F);\n\t\tcv::Mat frame_pose = cv::Mat::eye(4, 4, CV_64F);\n\n\t\t// std::cout << \"frame_pose \" << frame_pose << std::endl;\n\t\tcv::Mat trajectory = cv::Mat::zeros(600, 1200, CV_8UC3);\n\n\t\t// set of features currently tracked\n\t\tFeatureSet currentVOFeatures;\n\n\t\t// for timing code\n\t\tclock_t t_a, t_b;\n\t\tclock_t t_1, t_2;\n\n    // runs the pipeline\n\t\tvoid run();\n};\n"
+        }
+    ]
+}

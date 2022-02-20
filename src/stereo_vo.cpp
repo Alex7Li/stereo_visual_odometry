@@ -37,8 +37,6 @@ void StereoVO::stereo_callback(const sensor_msgs::ImageConstPtr& image_left, con
 
 void StereoVO::run()
 {
-    std::cout << std::endl << "frame id " << frame_id << std::endl;
-
     t_a = clock();
     t_1 = clock();
     std::vector<cv::Point2f> pointsLeft_t0, pointsRight_t0, pointsLeft_t1, pointsRight_t1;  
@@ -76,7 +74,7 @@ void StereoVO::run()
     // Tracking transfomation
     // ---------------------
     // PnP: computes rotation and translation between pair of images
-    trackingFrame2Frame(projMatrl, projMatrr, pointsLeft_t1, points3D_t0, rotation, translation, false);
+    cameraToWorld(projMatrl, projMatrr, pointsLeft_t1, points3D_t0, rotation, translation, false);
 
     // ------------------------------------------------
     // Integrating

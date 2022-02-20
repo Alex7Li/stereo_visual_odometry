@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 2,
+            "activePatchIndex": 5,
             "patches": [
                 {
                     "date": 1644160456403,
@@ -16,6 +16,18 @@
                 {
                     "date": 1644160774608,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -174,8 +174,8 @@\n     message_filters::Synchronizer<MySyncPolicy> sync(MySyncPolicy(10), image1_sub, image2_sub);\n     sync.registerCallback(boost::bind(&StereoVO::stereo_callback, &stereo_vo, _1, _2));\n \n     std::cout << \"Stereo VO Node Initialized!\" << std::endl;\n-    \n+  \n     ros::spin();\n     return 0;\n }\n"
+                },
+                {
+                    "date": 1645289760307,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -36,10 +36,8 @@\n }\n \n void StereoVO::run()\n {\n-    std::cout << std::endl << \"frame id \" << frame_id << std::endl;\n-\n     t_a = clock();\n     t_1 = clock();\n     std::vector<cv::Point2f> pointsLeft_t0, pointsRight_t0, pointsLeft_t1, pointsRight_t1;  \n     matchingFeatures( imageLeft_t0, imageRight_t0,\n"
+                },
+                {
+                    "date": 1645395173769,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -73,9 +73,9 @@\n     // ---------------------\n     // Tracking transfomation\n     // ---------------------\n     // PnP: computes rotation and translation between pair of images\n-    trackingFrame2Frame(projMatrl, projMatrr, pointsLeft_t1, points3D_t0, rotation, translation, false);\n+    worldToCamera(projMatrl, projMatrr, pointsLeft_t1, points3D_t0, rotation, translation, false);\n \n     // ------------------------------------------------\n     // Integrating\n     // ------------------------------------------------\n"
+                },
+                {
+                    "date": 1645395227148,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -73,9 +73,9 @@\n     // ---------------------\n     // Tracking transfomation\n     // ---------------------\n     // PnP: computes rotation and translation between pair of images\n-    worldToCamera(projMatrl, projMatrr, pointsLeft_t1, points3D_t0, rotation, translation, false);\n+    cameraToWorld(projMatrl, projMatrr, pointsLeft_t1, points3D_t0, rotation, translation, false);\n \n     // ------------------------------------------------\n     // Integrating\n     // ------------------------------------------------\n"
                 }
             ],
             "date": 1644160456403,
