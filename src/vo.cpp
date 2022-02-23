@@ -315,17 +315,17 @@ void VisualOdometry::stereo_callback_(const cv::Mat &imageLeft,
     
     std::vector<cv::Point2f> pointsLeftReturn_t0; // feature points to check
                                                   // circular matching validation
-    // append new features with old features
+    // Append new features with old features.
     currentVOFeatures.appendFeaturesFromImage(imageLeft_t0);
 
     // --------------------------------------------------------
-    // Feature tracking using KLT tracker, bucketing and circular matching
+    // Feature tracking using KLT tracker, bucketing and circular matching.
     // --------------------------------------------------------
     int bucket_size =
         std::min(imageLeft_t0.rows, imageLeft_t0.cols) / BUCKETS_PER_AXIS;
     int features_per_bucket = FEATURES_PER_BUCKET;
 
-    // filter features in currentVOFeatures to leave just one per bucket
+    // Filter features in currentVOFeatures to leave just one per bucket.
     currentVOFeatures.filterByBucketLocation(imageLeft_t0, bucket_size,
                       features_per_bucket);
 
@@ -335,14 +335,14 @@ void VisualOdometry::stereo_callback_(const cv::Mat &imageLeft,
                      pointsLeftT0, pointsRightT0, pointsLeftT1, pointsRightT1,
                      pointsLeftReturn_t0, currentVOFeatures);
 
-    // check if circled back points are in range of original points
+    // Check if circled back points are in range of original points.
     std::vector<bool> status = findUnmovedPoints(pointsLeftT0, pointsLeftReturn_t0, status, 0);
-    removeInvalidPoints(pointsLeftT0, status); // can combine into one function
+    removeInvalidPoints(pointsLeftT0, status);
     removeInvalidPoints(pointsLeftT1, status);
     removeInvalidPoints(pointsRightT0, status);
     removeInvalidPoints(pointsRightT1, status);
 
-    // update current tracked points
+    // Update current tracked points.
     currentVOFeatures.points = pointsLeftT1;
   }
 } // namespace visual_odometry

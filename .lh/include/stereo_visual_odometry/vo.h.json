@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 123,
+            "activePatchIndex": 124,
             "patches": [
                 {
                     "date": 1645281187446,
@@ -500,6 +500,10 @@
                 {
                     "date": 1645395226109,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -221,9 +221,9 @@\n  * @param worldPoints Same points in the real world\n  * @param rotation Matrix to store the estimated rotation output in.\n  * @param translation Matrix to store the estimated translation in.\n  */\n-void worldToCamera(cv::Mat &cameraProjection,\n+void cameraToWorld(cv::Mat &cameraProjection,\n                          std::vector<cv::Point2f> &cameraPoints,\n                          cv::Mat &worldPoints, cv::Mat &rotation,\n                          cv::Mat &translation);\n /**\n"
+                },
+                {
+                    "date": 1645649381626,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -96,8 +96,10 @@\n    * @param image\n    */\n   void appendFeaturesFromImage(const cv::Mat &image);\n };\n+\n+cv::Mat rosImage2CvMat(sensor_msgs::ImageConstPtr img);\n class VisualOdometry {\n private:\n   /* number of frames seen so far. */\n   int frame_id = 0;\n"
                 }
             ],
             "date": 1645281187446,

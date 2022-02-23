@@ -97,6 +97,7 @@ public:
    */
   void appendFeaturesFromImage(const cv::Mat &image);
 };
+
 class VisualOdometry {
 private:
   /* number of frames seen so far. */

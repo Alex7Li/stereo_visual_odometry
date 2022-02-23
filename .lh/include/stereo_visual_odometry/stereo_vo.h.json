@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 2,
+            "activePatchIndex": 3,
             "patches": [
                 {
                     "date": 1645280231358,
@@ -16,6 +16,10 @@
                 {
                     "date": 1645282910596,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -62,8 +62,5 @@\n \n \t\t// for timing code\n \t\tclock_t t_a, t_b;\n \t\tclock_t t_1, t_2;\n-\n-    // runs the pipeline one frame\n-\t\tvoid run();\n };\n"
+                },
+                {
+                    "date": 1645649296168,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -29,16 +29,11 @@\n class StereoVO\n {\n \tpublic:\n \n-\t\tStereoVO(cv::Mat projMatrl_, cv::Mat projMatrr_);\n-\n \t\tcv::Mat rosImage2CvMat(sensor_msgs::ImageConstPtr img);\n \n-\t\t// stereo pair callback\n-\t\tvoid stereo_callback(const sensor_msgs::ImageConstPtr& image_left, const sensor_msgs::ImageConstPtr& image_right);\n \n-\n \tprivate:\n \n \t\tint frame_id = 0;\n \n"
                 }
             ],
             "date": 1645280231358,
