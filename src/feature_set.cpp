@@ -16,6 +16,7 @@ void Bucket::add_feature(const cv::Point2f point, const int age) {
     } else {
       // TODO: Isn't this backwards? Don't we want to remove the
       // oldest feature? ~ Alex
+      
       // Insert feature with old age and remove youngest one.
       int age_min = features.ages[0];
       int age_min_idx = 0;

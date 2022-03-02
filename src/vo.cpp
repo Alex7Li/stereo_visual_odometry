@@ -39,7 +39,7 @@ void VisualOdometry::stereo_callback_(const cv::Mat &imageLeft,
 
     std::vector<cv::Point2f> pointsLeftT0, pointsRightT0, pointsLeftT1,
         pointsRightT1;
-
+    
     matchingFeatures(imageLeftT0_, imageRightT0_, imageLeftT1_, imageRightT1_,
                      currentVOFeatures, pointsLeftT0, pointsRightT0,
                      pointsLeftT1, pointsRightT1);
@@ -112,7 +112,7 @@ void VisualOdometry::stereo_callback_(const cv::Mat &imageLeft,
   // https://github.com/hjamal3/stereo_visual_odometry/blob/main/src/feature.cpp
   // --------------------------------
 
-  void deleteUnmatchFeaturesCircle(
+  void deleteFeaturesWithFailureStatus(
       std::vector<cv::Point2f> & points0, std::vector<cv::Point2f> & points1,
       std::vector<cv::Point2f> & points2, std::vector<cv::Point2f> & points3,
       std::vector<cv::Point2f> & points4, std::vector<int> & ages,
@@ -145,13 +145,12 @@ void VisualOdometry::stereo_callback_(const cv::Mat &imageLeft,
     }
   }
 
-  void circularMatching(cv::Mat img_l_0, cv::Mat img_r_0, cv::Mat img_l_1,
-                        cv::Mat img_r_1, std::vector<cv::Point2f> & points_l_0,
-                        std::vector<cv::Point2f> & points_r_0,
-                        std::vector<cv::Point2f> & points_l_1,
-                        std::vector<cv::Point2f> & points_r_1,
-                        std::vector<cv::Point2f> & points_l_0_return,
-                        FeatureSet & current_features) {
+  std::vector<uchar> circularMatching(const cv::Mat img_0, const cv::Mat img_1, const cv::Mat img_2,
+                        const cv::Mat img_3, std::vector<cv::Point2f> & points_0,
+                        std::vector<cv::Point2f> & points_1,
+                        std::vector<cv::Point2f> & points_2,
+                        std::vector<cv::Point2f> & points_3,
+                        std::vector<cv::Point2f> & points_0_return) {
     std::vector<float> err;
 
     cv::Size winSize =
@@ -165,27 +164,22 @@ void VisualOdometry::stereo_callback_(const cv::Mat &imageLeft,
     std::vector<uchar> status3;
 
     // Sparse iterative version of the Lucas-Kanade optical flow in pyramids.
-    calcOpticalFlowPyrLK(img_l_0, img_r_0, points_l_0, points_r_0, status0, err,
+    calcOpticalFlowPyrLK(img_0, img_1, points_0, points_1, status0, err,
                          winSize, 3, termcrit, 0, 0.001);
-    calcOpticalFlowPyrLK(img_r_0, img_r_1, points_r_0, points_r_1, status1, err,
+    calcOpticalFlowPyrLK(img_1, img_3, points_1, points_3, status1, err,
                          winSize, 3, termcrit, 0, 0.001);
-    calcOpticalFlowPyrLK(img_r_1, img_l_1, points_r_1, points_l_1, status2, err,
+    calcOpticalFlowPyrLK(img_3, img_2, points_3, points_2, status2, err,
                          winSize, 3, termcrit, 0, 0.001);
-    calcOpticalFlowPyrLK(img_l_1, img_l_0, points_l_1, points_l_0_return,
+    calcOpticalFlowPyrLK(img_2, img_0, points_2, points_0_return,
                          status3, err, winSize, 3, termcrit, 0, 0.001);
-    if (status3.size() != status0.size() or points_l_0.size() != points_l_0_return.size()) {
-      cerr << "Size of returned points was not correct!!\n";
+    if (status3.size() != status0.size() or points_0.size() != points_0_return.size()) {
+      std::cerr << "Size of returned points was not correct!!\n";
     }
     std::vector<uchar> status_all;
     for(int i = 0; i < status3.size(); i++) {
       status_all[i] = status0[i] | status1[i] | status2[i] | status3[i];
     }
-
-    deleteUnmatchFeaturesCircle(points_l_0, points_r_0, points_r_1, points_l_1,
-                                points_l_0_return, current_features.ages, status_all);
-    for (int i = 0; i < current_features.ages.size(); ++i) {
-      current_features.ages[i] += 1;
-    }
+    return status_all;
   }
 
 
@@ -259,7 +253,7 @@ void VisualOdometry::stereo_callback_(const cv::Mat &imageLeft,
         status.push_back(true);
       }
     }
-    return status
+    return status;
   }
 
   void removeInvalidPoints(std::vector<cv::Point2f> & points,
@@ -275,7 +269,7 @@ void VisualOdometry::stereo_callback_(const cv::Mat &imageLeft,
   }
   void cameraToWorld(
       const cv::Mat & cameraProjection,
-      const std::vector<cv::Point2f> & cameraPoints, cv::Mat & worldPoints,
+      const std::vector<cv::Point2f> & cameraPoints, const cv::Mat & worldPoints,
       cv::Mat & rotation, cv::Mat & translation) {
     // Calculate frame to frame transformation
     cv::Mat distCoeffs = cv::Mat::zeros(4, 1, CV_64FC1);
@@ -315,6 +309,9 @@ void VisualOdometry::stereo_callback_(const cv::Mat &imageLeft,
     
     std::vector<cv::Point2f> pointsLeftReturn_t0; // feature points to check
                                                   // circular matching validation
+    // TODO (Alex): Shouldn't we modify currentVOFeatures to index into the t1 images
+    // at some point in this method? Otherwise, they will get outdated really fast.
+
     // Append new features with old features.
     currentVOFeatures.appendFeaturesFromImage(imageLeft_t0);
 
@@ -331,12 +328,22 @@ void VisualOdometry::stereo_callback_(const cv::Mat &imageLeft,
 
     pointsLeftT0 = currentVOFeatures.points;
 
-    circularMatching(imageLeft_t0, imageRight_t0, imageLeft_t1, imageRight_t1,
+    std::vector<uchar> matchingStatus = circularMatching(imageLeft_t0, imageRight_t0, imageLeft_t1, imageRight_t1,
                      pointsLeftT0, pointsRightT0, pointsLeftT1, pointsRightT1,
                      pointsLeftReturn_t0, currentVOFeatures);
 
+    deleteFeaturesWithFailureStatus(
+        pointsLeftT0, pointsRightT0, pointsLeftT1, pointsRightT1, pointsLeftReturn_t0,
+        currentVOFeatures.ages, status_all);
+    for (int i = 0; i < currentVOFeatures.ages.size(); ++i) {
+      currentVOFeatures.ages[i] += 1;
+    }
+
+
     // Check if circled back points are in range of original points.
-    std::vector<bool> status = findUnmovedPoints(pointsLeftT0, pointsLeftReturn_t0, status, 0);
+    std::vector<bool> status = findUnmovedPoints(pointsLeftT0, pointsLeftReturn_t0, 0);
+    // TODO: Shouldn't we be modifying currentVOFeatures and the ages array here as well?
+    // (Can do this by using deleteFeaturesWithFailureStatus instead) - Alex
     removeInvalidPoints(pointsLeftT0, status);
     removeInvalidPoints(pointsLeftT1, status);
     removeInvalidPoints(pointsRightT0, status);
