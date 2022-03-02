@@ -47,6 +47,7 @@ namespace visual_odometry {
  * In total, there will be BUCKETS_PER_AXIS * BUCKETS_PER_AXIS
  * buckets.
  */
+// TODO @Future change to different bucket sizes per axis
 int BUCKETS_PER_AXIS = 10
 /**
  * @brief Maximum number of features per bucket
@@ -58,31 +59,48 @@ int FEATURES_PER_BUCKET = 1;
  */
 int AGE_THRESHOLD = 10;
 
+
+// TODO @Alex7Li comment what the Bucket class does
 class Bucket {
 public:
   int id;
   int max_size;
 
+  // TODO @Alex7Li comment what this is meant to store
   FeatureSet features;
 
+  // TODO @Alex7Li name this
   Bucket(int);
   ~Bucket();
 
+  /** //TODO @Alex7Li comment this
+   * @brief DESCRIPTION 
+   *
+   * @param point DESCRIPTION
+   * @param age DESCRIPTION
+   */
   void add_feature(const cv::Point2f point, const int age);
 
   int size();
 };
 
+// TODO @Alex7Li comment what the FeatureSet class does
 class FeatureSet {
 public:
+  
+  // TODO @Alex7Li comment what this is meant to store
   std::vector<cv::Point2f> points;
+  // TODO @Alex7Li comment what this is meant to store
   std::vector<int> ages;
   int size() { return points.size(); }
   /**
-   * Updates the feature set to only include a subset of the
+   * @brief Updates the feature set to only include a subset of the
    * original features which give a good spread throughout the image.
-   * @param image: only use for getting dimension of the image
-   * @param bucket_size: bucket size in pixel is bucket_size*bucket_size
+   *
+   * @param image only use for getting dimension of the image
+   *
+   * @param bucket_size bucket size in pixel is bucket_size*bucket_size
+   *
    * @param features_per_bucket: number of selected features per bucket
    */
 
@@ -93,7 +111,7 @@ public:
    * @brief Apply a feature detection algorithm over the image to generate new
    * features, and all all such features into this feature set.
    *
-   * @param image
+   * @param image //  TODO @Alex7Li Description
    */
   void appendFeaturesFromImage(const cv::Mat &image);
 };
@@ -114,19 +132,22 @@ private:
   cv::Mat translation = cv::Mat::zeros(3, 1, CV_64F);
   cv::Mat frame_pose = cv::Mat::eye(4, 4, CV_64F);
 
+  // TODO @Alex7Li What is this
   cv::Mat trajectory = cv::Mat::zeros(600, 1200, CV_8UC3);
 
   /* Set of features currently tracked. */
   FeatureSet currentVOFeatures;
 
+  //  TODO @Alex7Li Comment this
   void run();
 
 public:
   /**
    * @brief Construct a new Visual Odometry object
    *
-   * @param ProjMatrl Left camera parameter matrix
-   * @param projMatrr Right camera parameter matrix
+   * @param ProjMatrl Left camera projection matrix
+   *
+   * @param projMatrr Right camera projection matrix
    */
   VisualOdometry(const cv::Mat ProjMatrl, const cv::Mat projMatrr);
 
@@ -137,6 +158,7 @@ public:
    * publish the result.
    *
    * @param image_left The left image from stereo camera
+   *
    * @param image_right The right image from stereo camera
    */
   void stereo_callback(const cv::Mat &image_left, const cv::Mat &image_right);
@@ -145,19 +167,26 @@ public:
 /**
  * @brief Use the FAST feature detector to accumulate the features in image into
  * points.
+ *
  * @param image The image we're detecting.
+ *
  * @return A vector with the locations of all newly detected features.
+ * //TODO @Alex7Li this does not return anything??
  */
 void featureDetectionFast(const cv::Mat image);
 
 /**
  * @brief Remove all points from the 4 point vectors that are out of frame
- * or have a status of 0
+ * or have a status of 0 //TODO @Alex7Li also old??
  *
- * @param points[0..4] parallel vectors of points to update based on status.
+ * @param points[0..4] vectors of points to update based on status.
+ * SHOULD ALL BE THE SAME SIZE AND REPRESENT //TODO @Alex7Li what do they represent
+ *
  * @param ages Current ages of each of the points
+ *
  * @param status_all a vector with 1 If the point is valid, and 0 if it should be discarded.
  */
+// TODO @Alex7Li rename this
 void deleteUnmatchFeaturesCircle(
     std::vector<cv::Point2f> &points0, std::vector<cv::Point2f> &points1,
     std::vector<cv::Point2f> &points2, std::vector<cv::Point2f> &points3,
@@ -165,9 +194,11 @@ void deleteUnmatchFeaturesCircle(
     const std::vector<uchar> &status_all);
 
 /**
- * @brief Detect points not found in both cameras for both the previous and
+ * @brief Perform circular matching on  TODO @Alex7Li on what
+ * Detect points not found in both cameras for both the previous and
  * current frame and remove them.
  */
+// TODO @Alex7Li separate out deleteUnmatchFeaturesCircle
 void circularMatching(cv::Mat img_l_0, cv::Mat img_r_0, cv::Mat img_l_1,
                       cv::Mat img_r_1, std::vector<cv::Point2f> &points_l_0,
                       std::vector<cv::Point2f> &points_r_0,
@@ -178,9 +209,12 @@ void circularMatching(cv::Mat img_l_0, cv::Mat img_r_0, cv::Mat img_l_1,
 /**
  * @brief Compute the next pose from the current one
  * given the rotation and translation in the frame.
+ * Essentially a multiplicationof homogeneous transforms.
  * 
  * @param frame_pose The original position of the robot, will be modified.
+ *
  * @param rotation The rotation to go through.
+ *
  * @param translation_stereo The translation to go through.
  */
 void integrateOdometryStereo(cv::Mat &frame_pose,
@@ -190,6 +224,7 @@ void integrateOdometryStereo(cv::Mat &frame_pose,
  * @brief Compute the three euler angles for a given rotation matrix.
  *
  * @param R A rotation matrix
+ *
  * @return cv::Vec3f (x, y, z) euler angles for R.
  */
 cv::Vec3f rotationMatrixToEulerAngles(const cv::Mat &R);
@@ -198,7 +233,9 @@ cv::Vec3f rotationMatrixToEulerAngles(const cv::Mat &R);
  * differ.
  * 
  * @param points_[1..2] The vectors of points to compare.
+ *
  * @param threshold The distance at which to consider the points moved.
+ *
  * @return a vector v where v[i] is true iff |points_1[i] - points_2[i]| <= threshold
  */
 std::vector<bool> findUnmovedPoints(const std::vector<cv::Point2f> &points_1,
@@ -209,6 +246,7 @@ std::vector<bool> findUnmovedPoints(const std::vector<cv::Point2f> &points_1,
  * in which status[i] is false.
  * 
  * @param points The vector of points to update
+ *
  * @param status A vector indicating which points to remove.
  */
 void removeInvalidPoints(std::vector<cv::Point2f> &points,
@@ -218,9 +256,13 @@ void removeInvalidPoints(std::vector<cv::Point2f> &points,
  * to obtain the given world points from the camera input points
  * 
  * @param cameraProjection Camera projection matrix
+ *
  * @param cameraPoints Points from the perspective of the camera
+ *
  * @param worldPoints Same points in the real world
+ *
  * @param rotation Matrix to store the estimated rotation output in.
+ *
  * @param translation Matrix to store the estimated translation in.
  */
 void cameraToWorld(cv::Mat &cameraProjection,
@@ -228,8 +270,14 @@ void cameraToWorld(cv::Mat &cameraProjection,
                          cv::Mat &worldPoints, cv::Mat &rotation,
                          cv::Mat &translation);
 /**
+ * // TODO @Alex7Li 
+ * @brief <<DESCRIBE>>
+ * Calls many of the above functions in a pipeline.
+ * a->b->c
+ * 
  * Input: 4 images and the set of currently tracked features, as
  * well as references to 4 vectors of points (by reference).
+ * 
  * @return: vectors of features shared between the 4 images.
  */
 void matchingFeatures(const cv::Mat &imageLeftT0, const cv::Mat &imageRightT0,
