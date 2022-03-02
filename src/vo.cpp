@@ -164,8 +164,6 @@ void VisualOdometry::stereo_callback_(const cv::Mat &imageLeft,
     std::vector<uchar> status2;
     std::vector<uchar> status3;
 
-    // TODO: Do these 4 vectors neccessarily have the same length? Documentation seems suspicious,
-    // and if not, there's a big bug... ~ Alex
     // Sparse iterative version of the Lucas-Kanade optical flow in pyramids.
     calcOpticalFlowPyrLK(img_l_0, img_r_0, points_l_0, points_r_0, status0, err,
                          winSize, 3, termcrit, 0, 0.001);
@@ -175,7 +173,9 @@ void VisualOdometry::stereo_callback_(const cv::Mat &imageLeft,
                          winSize, 3, termcrit, 0, 0.001);
     calcOpticalFlowPyrLK(img_l_1, img_l_0, points_l_1, points_l_0_return,
                          status3, err, winSize, 3, termcrit, 0, 0.001);
-
+    if (status3.size() != status0.size() or points_l_0.size() != points_l_0_return.size()) {
+      cerr << "Size of returned points was not correct!!\n";
+    }
     std::vector<uchar> status_all;
     for(int i = 0; i < status3.size(); i++) {
       status_all[i] = status0[i] | status1[i] | status2[i] | status3[i];

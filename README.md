@@ -83,3 +83,12 @@ and report an error with the frame if it's too big. And apparently too small??
 Also idk what it has to do with integration
 
 
+
+
+# Morphin
+Original in ~/ssd/code/autonomy_kinematis/src/position_estimator/stereo_visual_odometry
+Mine in Desktop/alex_ws
+
+```bash
+catkin_make
+```
