@@ -32,6 +32,29 @@
 #include <string>
 #include <vector>
 
+/************
+ * ROS ONLY *
+ ************/
+#include "ros/ros.h"
+#include "sensor_msgs/Image.h"
+#include "std_msgs/Int32MultiArray.h"
+#include "nav_msgs/Odometry.h"
+#include "geometry_msgs/Quaternion.h"
+#include <tf/transform_broadcaster.h>
+#include <message_filters/subscriber.h>
+#include <message_filters/synchronizer.h>
+#include <message_filters/sync_policies/approximate_time.h>
+#include <cv_bridge/cv_bridge.h>
+
+#include <eigen3/Eigen/Dense>
+#include <eigen3/Eigen/Core>
+#include <eigen3/Eigen/Geometry> 
+/* END ROS ONLY */
+
+/************
+ * CFS ONLY *
+ ************/
+/*
 #include "Core"
 #include "Dense"
 
@@ -40,6 +63,8 @@ extern "C" {
 #include "common_types.h"
 #include "pe_events.h"
 }
+*/
+/* END CFS ONLY */
 
 namespace visual_odometry {
 /**
@@ -48,7 +73,7 @@ namespace visual_odometry {
  * buckets.
  */
 // TODO @Future change to different bucket sizes per axis
-int BUCKETS_PER_AXIS = 10
+int BUCKETS_PER_AXIS = 10;
 /**
  * @brief Maximum number of features per bucket
  */
@@ -58,38 +83,6 @@ int FEATURES_PER_BUCKET = 1;
  * for this many frames.
  */
 int AGE_THRESHOLD = 10;
-
-
-/**
- * @brief A class to allow storing a set of at most max_size
- * image features, and remove outdated features to satisfy this
- * constraint.
- **/
-class Bucket {
-  int max_size;
-
-  /**
-   * @brief The set of features stored in this bucket.
-   */
-  FeatureSet features;
-
-public:
-  Bucket(int max_size);
-  ~Bucket();
-
-  /**
-   * @brief Add a feature to the bucket
-   *
-   * @param point The location of the feature to add
-   * @param age The number of iterations since this feature was detected.
-   */
-  void add_feature(const cv::Point2f point, const int age);
-  
-  /**
-   * @return int The size of the feature set
-   */
-  int size();
-};
 
 /**
  * @brief A set of locations for image features and their ages.
@@ -127,6 +120,37 @@ public:
    * @param image The image to obtain all points from.
    */
   void appendFeaturesFromImage(const cv::Mat &image);
+};
+
+/**
+ * @brief A class to allow storing a set of at most max_size
+ * image features, and remove outdated features to satisfy this
+ * constraint.
+ **/
+class Bucket {
+public:
+  int max_size;
+
+  /**
+   * @brief The set of features stored in this bucket.
+   */
+  FeatureSet features;
+
+  Bucket(int max_size);
+  ~Bucket();
+
+  /**
+   * @brief Add a feature to the bucket
+   *
+   * @param point The location of the feature to add
+   * @param age The number of iterations since this feature was detected.
+   */
+  void add_feature(const cv::Point2f point, const int age);
+  
+  /**
+   * @return int The size of the feature set
+   */
+  int size();
 };
 
 class VisualOdometry {
@@ -195,7 +219,7 @@ std::vector<cv::Point2f> featureDetectionFast(const cv::Mat image);
 void deleteFeaturesWithFailureStatus(
     std::vector<cv::Point2f> &points0, std::vector<cv::Point2f> &points1,
     std::vector<cv::Point2f> &points2, std::vector<cv::Point2f> &points3,
-    std::vector<cv::Point2f> &points4, std::vector<int> &ages
+    std::vector<cv::Point2f> &points4, std::vector<int> &ages,
     const std::vector<uchar> &status_all);
 
 /**

@@ -1,5 +1,5 @@
-#include "stereo_visual_odometry/vo.h"
-
+#include "vo.h"
+namespace visual_odometry {
 Bucket::Bucket(int size) { max_size = size; }
 
 Bucket::~Bucket() {}
@@ -58,7 +58,7 @@ void FeatureSet::filterByBucketLocation(const cv::Mat & image,
   int buckets_nums_width = image_width / bucket_size;
   int buckets_number = buckets_nums_height * buckets_nums_width;
 
-  std::vector<Bucket> buckets(bucket_nums_height * bucket_nums_width,
+  std::vector<Bucket> buckets(buckets_nums_height * buckets_nums_width,
                   Bucket(features_per_bucket));
 
   // bucket all current features into buckets by their location
@@ -81,9 +81,10 @@ void FeatureSet::filterByBucketLocation(const cv::Mat & image,
           buckets_idx_width++) {
       buckets_idx =
           buckets_idx_height * buckets_nums_width + buckets_idx_width;
-      bucket = buckets[buckets_idx];
-      points.insert(points.end(), features.points.begin(), features.points.end());
-      ages.insert(ages.end(), features.ages.begin(), features.ages.end());
+      Bucket bucket = buckets[buckets_idx];
+      points.insert(points.end(), bucket.features.points.begin(), bucket.features.points.end());
+      ages.insert(ages.end(), bucket.features.ages.begin(), bucket.features.ages.end());
       }
   }
 }
+} // namespace visual_odometry

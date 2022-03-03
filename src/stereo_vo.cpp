@@ -1,4 +1,4 @@
-#include "stereo_visual_odometry/vo.h"
+#include "vo.h"
 #include <stdexcept>
 
 namespace visual_odometry {
@@ -58,7 +58,7 @@ int main(int argc, char **argv)
     message_filters::Synchronizer<MySyncPolicy> sync(MySyncPolicy(10), image1_sub, image2_sub);
     // Register stereo_callback to the synchronizer. When the synchronizer sends a pair of stereo
     // images _1 and _2, we convert them into matricies and run visual odometry.
-    sync.registerCallback(boost::bind(&VisualOdometry::stereo_callback_, &stereo_vo, 
+    sync.registerCallback(boost::bind(&VisualOdometry::stereo_callback, &stereo_vo, 
         boost::bind(rosImage2CvMat, _1), boost::bind(rosImage2CvMat, _2)));
 
     std::cout << "Stereo VO Node Initialized!" << std::endl;

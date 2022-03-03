@@ -23,7 +23,7 @@ VisualOdometry::VisualOdometry(const cv::Mat leftCameraProjection,
 }
 
 VisualOdometry::~VisualOdometry() {}
-void VisualOdometry::stereo_callback_(const cv::Mat &imageLeft,
+void VisualOdometry::stereo_callback(const cv::Mat &imageLeft,
                                       const cv::Mat &imageRight) {
     // Wait until we have at least two time steps of data
     // to begin predicting the change in pose.
@@ -76,7 +76,7 @@ void VisualOdometry::stereo_callback_(const cv::Mat &imageLeft,
     // Don't perform an update if the output is unusually large, indicates a error elsewhere.
     if (abs(rotation_euler[1]) < 0.1 && abs(rotation_euler[0]) < 0.1 &&
         abs(rotation_euler[2]) < 0.1) {
-      integrateOdometryStereo(frame_id, frame_pose, rotation, translation);
+      integrateOdometryStereo(frame_pose, rotation, translation);
     }
     cv::Mat xyz = frame_pose.col(3).clone();
     cv::Mat R = frame_pose(cv::Rect(0, 0, 3, 3));
@@ -216,7 +216,7 @@ void VisualOdometry::stereo_callback_(const cv::Mat &imageLeft,
   // Calculates rotation matrix to euler angles
   // The result is the same as MATLAB except the order
   // of the euler angles ( x and z are swapped ).
-  cv::Vec3f const rotationMatrixToEulerAngles(cv::Mat & R) {
+  cv::Vec3f rotationMatrixToEulerAngles(const cv::Mat & R) {
     float sy = sqrt(R.at<double>(0, 0) * R.at<double>(0, 0) +
                     R.at<double>(1, 0) * R.at<double>(1, 0));
 
@@ -299,7 +299,7 @@ void VisualOdometry::stereo_callback_(const cv::Mat &imageLeft,
     cv::Rodrigues(rvec, rotation);
   }
 
-  static void matchingFeatures(
+  void matchingFeatures(
       const cv::Mat &imageLeft_t0, const cv::Mat &imageRight_t0,
       const cv::Mat &imageLeft_t1, const cv::Mat &imageRight_t1,
       FeatureSet &currentVOFeatures, std::vector<cv::Point2f> &pointsLeftT0,
@@ -330,11 +330,11 @@ void VisualOdometry::stereo_callback_(const cv::Mat &imageLeft,
 
     std::vector<uchar> matchingStatus = circularMatching(imageLeft_t0, imageRight_t0, imageLeft_t1, imageRight_t1,
                      pointsLeftT0, pointsRightT0, pointsLeftT1, pointsRightT1,
-                     pointsLeftReturn_t0, currentVOFeatures);
+                     pointsLeftReturn_t0);
 
     deleteFeaturesWithFailureStatus(
         pointsLeftT0, pointsRightT0, pointsLeftT1, pointsRightT1, pointsLeftReturn_t0,
-        currentVOFeatures.ages, status_all);
+        currentVOFeatures.ages, matchingStatus);
     for (int i = 0; i < currentVOFeatures.ages.size(); ++i) {
       currentVOFeatures.ages[i] += 1;
     }
