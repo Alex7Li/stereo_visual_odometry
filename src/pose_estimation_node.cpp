@@ -117,6 +117,8 @@ void PoseEstimator::run()
 
     // if not enough features don't use vo
     bool vo_usable = true;
+    bool which_update = false; // if using vo, log as true
+    int inliers = -1;
     if (currentVOFeatures.size() < features_threshold)
     {
         debug("[node]: not enough features detected for vo: " + std::to_string(currentVOFeatures.size())  + " < " + std::to_string(features_threshold));
@@ -129,7 +131,7 @@ void PoseEstimator::run()
 	    cv::convertPointsFromHomogeneous(points4D_t0.t(), points3D_t0);
 
 	    // PnP: computes rotation and translation between previous 3D points and next features
-	    int inliers = trackingFrame2Frame(projMatrl, projMatrr, pointsLeft_t1, points3D_t0, rotation, translation);
+	    inliers = trackingFrame2Frame(projMatrl, projMatrr, pointsLeft_t1, points3D_t0, rotation, translation);
 
         // PnP may not converge
         if (inliers < features_threshold)
@@ -169,6 +171,7 @@ void PoseEstimator::run()
     	Eigen::Matrix<double,3,1> vo_trans_global_frame = rot_ib._transformVector(vo_trans_rover_frame);
     	// add to global position
     	global_pos += vo_trans_global_frame;
+	which_update = true;
     } else 
     {
     	debug("[node]: Using encoder update");
@@ -180,7 +183,7 @@ void PoseEstimator::run()
     {
         static auto time_init = std::chrono::steady_clock::now();
         double time_now = (double)(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()- time_init).count())/1000;
-        output_file << time_now << ", " << global_pos[0] << ", " << global_pos[1] << ", " << global_pos[2] << "\n";
+        output_file << time_now << ", " << global_pos[0] << ", " << global_pos[1] << ", " << global_pos[2] << " vo?: " << which_update << " inliers: " << inliers << " feature_threshold " << features_threshold << " after bucket features: " << currentVOFeatures.points.size() << "\n";
         debug("t: " + std::to_string(time_now) + " s\n");
     }
 	
@@ -209,6 +212,8 @@ void PoseEstimator::run()
 	odom.pose.pose.orientation.y = current_rot.y();
 	odom.pose.pose.orientation.z = current_rot.z();
 	odom.pose.pose.orientation.w = current_rot.w();
+	if (which_update) {odom.child_frame_id = "vo";}
+        else {odom.child_frame_id = "encoder";}	
 	(*pub_ptr).publish(odom);
 }
 

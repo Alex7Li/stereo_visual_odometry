@@ -53,7 +53,7 @@ void loadImageRight(cv::Mat& image_color, cv::Mat& image_gary, int frame_id, std
 
 void debug(const std::string & s)
 {
-	if (false) std::cout << s << std::endl;
+	if (true) std::cout << s << std::endl;
 }
 
 #endif

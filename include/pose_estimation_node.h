@@ -89,7 +89,7 @@ class PoseEstimator
 		cv::Mat imageRight_t1,  imageLeft_t1;
 
 		// number of features sufficient for VO
-		const int features_threshold = 60;
+		const int features_threshold = 30;
 
 		// set of features currently tracked
 		FeatureSet currentVOFeatures;
@@ -113,6 +113,6 @@ class PoseEstimator
 		const double ticks_per_m = 1316/(M_PI*2*R);
 
 		// Camera body transformation
-		const Eigen::Quaternion<double> q_bc = {0.3995,-0.5834,0.5834,-0.3995};
+		const Eigen::Quaternion<double> q_bc = {0.3903,-0.5896,-0.5896,0.3903};
 
 };
