@@ -14,21 +14,18 @@ void Bucket::add_feature(const cv::Point2f point, const int age) {
       features.points.push_back(point);
       features.ages.push_back(age);
     } else {
-      // TODO: Isn't this backwards? Don't we want to remove the
-      // oldest feature? ~ Alex
-      
-      // Insert feature with old age and remove youngest one.
-      int age_min = features.ages[0];
-      int age_min_idx = 0;
+      // Insert feature with young age and remove oldest one.
+      int age_max = features.ages[0];
+      int age_max_idx = 0;
 
       for (int i = 0; i < size(); i++) {
-        if (age < age_min) {
-          age_min = age;
-          age_min_idx = i;
+        if (age > age_max) {
+          age_max = age;
+          age_max_idx = i;
         }
       }
-      features.points[age_min_idx] = point;
-      features.ages[age_min_idx] = age;
+      features.points[age_max_idx] = point;
+      features.ages[age_max_idx] = age;
     }
   }
 }

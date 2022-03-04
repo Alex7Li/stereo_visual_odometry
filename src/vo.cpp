@@ -116,7 +116,7 @@ void VisualOdometry::stereo_callback(const cv::Mat &imageLeft,
       std::vector<cv::Point2f> & points0, std::vector<cv::Point2f> & points1,
       std::vector<cv::Point2f> & points2, std::vector<cv::Point2f> & points3,
       std::vector<cv::Point2f> & points4, std::vector<int> & ages,
-      const std::vector<uchar> & status_all) {
+      const std::vector<bool> & status_all) {
     // getting rid of points for which the KLT tracking failed or those who have
     // gone outside the frame
     int indexCorrection = 0;
@@ -126,13 +126,9 @@ void VisualOdometry::stereo_callback(const cv::Mat &imageLeft,
       cv::Point2f pt2 = points2.at(i - indexCorrection);
       cv::Point2f pt3 = points3.at(i - indexCorrection);
       cv::Point2f pt4 = points4.at(i - indexCorrection);
-      // TODO: Why are we even considering the x/y coordinates here, should we do it for pt4, and
-      // if we should consider it, should we consider the case where they are out of the image along the
-      // image size axes?
-      if ((status_all.at(i) == 0) || (pt3.x < 0) || (pt3.y < 0) ||
-           (pt2.x < 0) || (pt2.y < 0) ||
-           (pt1.x < 0) || (pt1.y < 0) ||
-           (pt0.x < 0) || (pt0.y < 0)) {
+      // // no need to check bounds for pt4 since it's equal to pt0 at
+      // // all valid locations
+      if ((status_all.at(i) == 0)) {
         points0.erase(points0.begin() + (i - indexCorrection));
         points1.erase(points1.begin() + (i - indexCorrection));
         points2.erase(points2.begin() + (i - indexCorrection));
@@ -309,8 +305,6 @@ void VisualOdometry::stereo_callback(const cv::Mat &imageLeft,
     
     std::vector<cv::Point2f> pointsLeftReturn_t0; // feature points to check
                                                   // circular matching validation
-    // TODO (Alex): Shouldn't we modify currentVOFeatures to index into the t1 images
-    // at some point in this method? Otherwise, they will get outdated really fast.
 
     // Append new features with old features.
     currentVOFeatures.appendFeaturesFromImage(imageLeft_t0);
@@ -332,22 +326,34 @@ void VisualOdometry::stereo_callback(const cv::Mat &imageLeft,
                      pointsLeftT0, pointsRightT0, pointsLeftT1, pointsRightT1,
                      pointsLeftReturn_t0);
 
-    deleteFeaturesWithFailureStatus(
-        pointsLeftT0, pointsRightT0, pointsLeftT1, pointsRightT1, pointsLeftReturn_t0,
-        currentVOFeatures.ages, matchingStatus);
-    for (int i = 0; i < currentVOFeatures.ages.size(); ++i) {
-      currentVOFeatures.ages[i] += 1;
-    }
 
 
     // Check if circled back points are in range of original points.
     std::vector<bool> status = findUnmovedPoints(pointsLeftT0, pointsLeftReturn_t0, 0);
     // TODO: Shouldn't we be modifying currentVOFeatures and the ages array here as well?
     // (Can do this by using deleteFeaturesWithFailureStatus instead) - Alex
-    removeInvalidPoints(pointsLeftT0, status);
-    removeInvalidPoints(pointsLeftT1, status);
-    removeInvalidPoints(pointsRightT0, status);
-    removeInvalidPoints(pointsRightT1, status);
+    for(int i = 0; i < status.size(); i++) {
+      if(!status[i] || !matchingStatus[i] ||
+          (pointsLeftT0[i].x < 0) || (pointsLeftT0[i].y < 0) ||
+              (pointsLeftT0[i].x >= imageLeft_t0.rows) || (pointsLeftT0[i].y >= imageLeft_t0.cols) ||
+              (pointsLeftT1[i].x < 0) || (pointsLeftT1[i].y < 0) ||
+              (pointsLeftT1[i].x >= imageLeft_t1.rows) || (pointsLeftT1[i].y >= imageLeft_t1.cols) ||
+              (pointsRightT0[i].x < 0) || (pointsRightT0[i].y < 0) ||
+              (pointsRightT0[i].x >= imageRight_t0.rows) || (pointsRightT0[i].y >= imageRight_t0.cols) ||
+              (pointsRightT1[i].x < 0) || (pointsRightT1[i].y < 0) ||
+              (pointsRightT1[i].x >= imageRight_t1.rows) || (pointsRightT1[i].y >= imageRight_t1.cols)
+              ) {
+          status[i] = false;
+      }
+    }
+
+    deleteFeaturesWithFailureStatus(
+        pointsLeftT0, pointsRightT0, pointsLeftT1, pointsRightT1, pointsLeftReturn_t0,
+        currentVOFeatures.ages, status);
+
+    for (int i = 0; i < currentVOFeatures.ages.size(); ++i) {
+      currentVOFeatures.ages[i] += 1;
+    }
 
     // Update current tracked points.
     currentVOFeatures.points = pointsLeftT1;

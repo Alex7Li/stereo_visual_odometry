@@ -222,7 +222,7 @@ void deleteFeaturesWithFailureStatus(
     std::vector<cv::Point2f> &points0, std::vector<cv::Point2f> &points1,
     std::vector<cv::Point2f> &points2, std::vector<cv::Point2f> &points3,
     std::vector<cv::Point2f> &points4, std::vector<int> &ages,
-    const std::vector<uchar> &status_all);
+    const std::vector<bool> &status_all);
 
 /**
  * @brief Perform circular matching on 4 images and
