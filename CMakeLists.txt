@@ -31,7 +31,7 @@ add_library(feature SHARED src/feature_set.cpp)
 add_library(vo SHARED src/vo.cpp)
 
 target_link_libraries( feature ${OpenCV_LIBS})
-target_link_libraries( vo feature ${OpenCV_LIBS})
+target_link_libraries( vo feature ${OpenCV_LIBS} ${catkin_LIBRARIES})
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -150,13 +150,13 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/stereo_visual_odometry_node.cpp)
-add_executable(stereo_vo_node src/stereo_vo.cpp)
-add_dependencies(stereo_vo_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(stereo_vo_node
+add_executable(${PROJECT_NAME}_node src/stereo_vo.cpp)
+add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(${PROJECT_NAME}_node
+   feature vo
    ${catkin_LIBRARIES}
    ${OpenCV_LIBRARIES}
-   feature vo
-)
+   ) 
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the

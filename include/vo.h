@@ -13,6 +13,8 @@
  * @author 		Carnegie Mellon University, Planetary Robotics Lab
  *
  ****************************************************************/
+#ifndef VO_H__
+#define VO_H__
 #include <ctype.h>
 #include <math.h>
 
@@ -31,7 +33,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
-
+ 
 /************
  * ROS ONLY *
  ************/
@@ -331,3 +333,4 @@ void matchingFeatures(const cv::Mat &imageLeftT0, const cv::Mat &imageRightT0,
                       std::vector<cv::Point2f> &pointsLeftT1,
                       std::vector<cv::Point2f> &pointsRightT1);
 } // namespace visual_odometry
+#endif

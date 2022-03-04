@@ -91,4 +91,8 @@ Mine in Desktop/alex_ws
 
 ```bash
 catkin_make
+rviz
+rosbag play my.bag
+rosbag info my.bag
+
 ```

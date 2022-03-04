@@ -1,7 +1,7 @@
 #include "vo.h"
 #include <stdexcept>
 
-namespace visual_odometry {
+using namespace visual_odometry;
 
 cv::Mat rosImage2CvMat(sensor_msgs::ImageConstPtr img) {
     cv_bridge::CvImagePtr cv_ptr;
@@ -14,7 +14,7 @@ cv::Mat rosImage2CvMat(sensor_msgs::ImageConstPtr img) {
 }
 
 // Entry point
-int main(int argc, char **argv)
+int main(int argc, char* argv[])
 {
 
     ros::init(argc, argv, "stereo_vo_node");
@@ -66,4 +66,3 @@ int main(int argc, char **argv)
     ros::spin();
     return 0;
 }
-} // namespace visual_odometry
