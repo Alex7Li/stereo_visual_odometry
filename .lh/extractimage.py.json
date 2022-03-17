@@ -1,0 +1,58 @@
+{
+    "sourceFile": "extractimage.py",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 10,
+            "patches": [
+                {
+                    "date": 1647463793862,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1647465782477,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -24,9 +24,9 @@\n     parser.add_argument(\"image_topic\", help=\"Image topic.\")\n \n     args = parser.parse_args()\n \n-    print \"Extract images from %s on topic %s into %s\" % (args.bag_file,\n+    print(\"Extract images from %s on topic %s into %s\" % (args.bag_file,\n                                                           args.image_topic, args.output_dir)\n \n     bag = rosbag.Bag(args.bag_file, \"r\")\n     bridge = CvBridge()\n"
+                },
+                {
+                    "date": 1647465788261,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -25,9 +25,9 @@\n \n     args = parser.parse_args()\n \n     print(\"Extract images from %s on topic %s into %s\" % (args.bag_file,\n-                                                          args.image_topic, args.output_dir)\n+                                                          args.image_topic, args.output_dir))\n \n     bag = rosbag.Bag(args.bag_file, \"r\")\n     bridge = CvBridge()\n     count = 0\n"
+                },
+                {
+                    "date": 1647465799993,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -34,9 +34,9 @@\n     for topic, msg, t in bag.read_messages(topics=[args.image_topic]):\n         cv_img = bridge.imgmsg_to_cv2(msg, desired_encoding=\"passthrough\")\n \n         cv2.imwrite(os.path.join(args.output_dir, \"frame%06i.png\" % count), cv_img)\n-        print \"Wrote image %i\" % count\n+        print(\"Wrote image %i\" % count)\n \n         count += 1\n \n     bag.close()\n"
+                },
+                {
+                    "date": 1647465895845,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -28,8 +28,9 @@\n     print(\"Extract images from %s on topic %s into %s\" % (args.bag_file,\n                                                           args.image_topic, args.output_dir))\n \n     bag = rosbag.Bag(args.bag_file, \"r\")\n+    topics = bag.get_type_and_topic_info()[1].keys()\n     bridge = CvBridge()\n     count = 0\n     for topic, msg, t in bag.read_messages(topics=[args.image_topic]):\n         cv_img = bridge.imgmsg_to_cv2(msg, desired_encoding=\"passthrough\")\n"
+                },
+                {
+                    "date": 1647465900883,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -29,8 +29,9 @@\n                                                           args.image_topic, args.output_dir))\n \n     bag = rosbag.Bag(args.bag_file, \"r\")\n     topics = bag.get_type_and_topic_info()[1].keys()\n+    print(topics)\n     bridge = CvBridge()\n     count = 0\n     for topic, msg, t in bag.read_messages(topics=[args.image_topic]):\n         cv_img = bridge.imgmsg_to_cv2(msg, desired_encoding=\"passthrough\")\n"
+                },
+                {
+                    "date": 1647466093616,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -32,8 +32,9 @@\n     topics = bag.get_type_and_topic_info()[1].keys()\n     print(topics)\n     bridge = CvBridge()\n     count = 0\n+    os.mkdir(args.output_dir)\n     for topic, msg, t in bag.read_messages(topics=[args.image_topic]):\n         cv_img = bridge.imgmsg_to_cv2(msg, desired_encoding=\"passthrough\")\n \n         cv2.imwrite(os.path.join(args.output_dir, \"frame%06i.png\" % count), cv_img)\n"
+                },
+                {
+                    "date": 1647466234457,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -29,9 +29,8 @@\n                                                           args.image_topic, args.output_dir))\n \n     bag = rosbag.Bag(args.bag_file, \"r\")\n     topics = bag.get_type_and_topic_info()[1].keys()\n-    print(topics)\n     bridge = CvBridge()\n     count = 0\n     os.mkdir(args.output_dir)\n     for topic, msg, t in bag.read_messages(topics=[args.image_topic]):\n"
+                },
+                {
+                    "date": 1647466246204,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -28,9 +28,10 @@\n     print(\"Extract images from %s on topic %s into %s\" % (args.bag_file,\n                                                           args.image_topic, args.output_dir))\n \n     bag = rosbag.Bag(args.bag_file, \"r\")\n-    topics = bag.get_type_and_topic_info()[1].keys()\n+    # topics = bag.get_type_and_topic_info()[1].keys()\n+    # print(topics)\n     bridge = CvBridge()\n     count = 0\n     os.mkdir(args.output_dir)\n     for topic, msg, t in bag.read_messages(topics=[args.image_topic]):\n"
+                },
+                {
+                    "date": 1647466261923,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -28,10 +28,8 @@\n     print(\"Extract images from %s on topic %s into %s\" % (args.bag_file,\n                                                           args.image_topic, args.output_dir))\n \n     bag = rosbag.Bag(args.bag_file, \"r\")\n-    # topics = bag.get_type_and_topic_info()[1].keys()\n-    # print(topics)\n     bridge = CvBridge()\n     count = 0\n     os.mkdir(args.output_dir)\n     for topic, msg, t in bag.read_messages(topics=[args.image_topic]):\n@@ -40,8 +38,11 @@\n         cv2.imwrite(os.path.join(args.output_dir, \"frame%06i.png\" % count), cv_img)\n         print(\"Wrote image %i\" % count)\n \n         count += 1\n+    if count == 0:\n+        topics = bag.get_type_and_topic_info()[1].keys()\n+        print(topics)\n \n     bag.close()\n \n     return\n"
+                },
+                {
+                    "date": 1647466274357,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -39,8 +39,9 @@\n         print(\"Wrote image %i\" % count)\n \n         count += 1\n     if count == 0:\n+        print(\"nothing written, make sure your topic is valid?\")\n         topics = bag.get_type_and_topic_info()[1].keys()\n         print(topics)\n \n     bag.close()\n"
+                }
+            ],
+            "date": 1647463793862,
+            "name": "Commit-0",
+            "content": "#!/usr/bin/env python\n# -*- coding: utf-8 -*-\n\n# Copyright 2016 Massachusetts Institute of Technology\n\n\"\"\"Extract images from a rosbag.\n\"\"\"\n\nimport os\nimport argparse\n\nimport cv2\n\nimport rosbag\nfrom sensor_msgs.msg import Image\nfrom cv_bridge import CvBridge\n\ndef main():\n    \"\"\"Extract a folder of images from a rosbag.\n    \"\"\"\n    parser = argparse.ArgumentParser(description=\"Extract images from a ROS bag.\")\n    parser.add_argument(\"bag_file\", help=\"Input ROS bag.\")\n    parser.add_argument(\"output_dir\", help=\"Output directory.\")\n    parser.add_argument(\"image_topic\", help=\"Image topic.\")\n\n    args = parser.parse_args()\n\n    print \"Extract images from %s on topic %s into %s\" % (args.bag_file,\n                                                          args.image_topic, args.output_dir)\n\n    bag = rosbag.Bag(args.bag_file, \"r\")\n    bridge = CvBridge()\n    count = 0\n    for topic, msg, t in bag.read_messages(topics=[args.image_topic]):\n        cv_img = bridge.imgmsg_to_cv2(msg, desired_encoding=\"passthrough\")\n\n        cv2.imwrite(os.path.join(args.output_dir, \"frame%06i.png\" % count), cv_img)\n        print \"Wrote image %i\" % count\n\n        count += 1\n\n    bag.close()\n\n    return\n\nif __name__ == '__main__':\n    main()"
+        }
+    ]
+}

@@ -1,0 +1,202 @@
+{
+    "sourceFile": "src/main.cpp",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 46,
+            "patches": [
+                {
+                    "date": 1647463379735,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1647463616340,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -10,8 +10,9 @@\n     if(argc < 5) {\n       std::cout << \"Too few arguments\" << std::endl;\n       return -1;\n     }\n+    folder = 'run1images'\n     \n     // Disparity image data stucture\n     cv::Mat_<int16_t> disparity16;\n \n"
+                },
+                {
+                    "date": 1647463624327,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -10,13 +10,13 @@\n     if(argc < 5) {\n       std::cout << \"Too few arguments\" << std::endl;\n       return -1;\n     }\n-    folder = 'run1images'\n     \n     // Disparity image data stucture\n     cv::Mat_<int16_t> disparity16;\n \n+    std::string folder = 'run1images'\n     // Image paths\n     std::string prev_img_l_path = argv[1];\n     std::string prev_img_r_path = argv[2];\n     std::string cur_img_l_path = argv[1];\n"
+                },
+                {
+                    "date": 1647463634372,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -3,9 +3,8 @@\n #include <opencv2/highgui.hpp>\n #include <opencv2/calib3d/calib3d.hpp>\n #include <iostream>\n \n-\n int main(int argc, char** argv) {\n \n     if(argc < 5) {\n       std::cout << \"Too few arguments\" << std::endl;\n@@ -14,9 +13,9 @@\n     \n     // Disparity image data stucture\n     cv::Mat_<int16_t> disparity16;\n \n-    std::string folder = 'run1images'\n+    std::string folder = 'run1images';\n     // Image paths\n     std::string prev_img_l_path = argv[1];\n     std::string prev_img_r_path = argv[2];\n     std::string cur_img_l_path = argv[1];\n"
+                },
+                {
+                    "date": 1647463644747,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -13,9 +13,9 @@\n     \n     // Disparity image data stucture\n     cv::Mat_<int16_t> disparity16;\n \n-    std::string folder = 'run1images';\n+    std::string folder = \"run1images\";\n     // Image paths\n     std::string prev_img_l_path = argv[1];\n     std::string prev_img_r_path = argv[2];\n     std::string cur_img_l_path = argv[1];\n"
+                },
+                {
+                    "date": 1647463650494,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -13,9 +13,9 @@\n     \n     // Disparity image data stucture\n     cv::Mat_<int16_t> disparity16;\n \n-    std::string folder = \"run1images\";\n+    std::string folderName = \"run1images\";\n     // Image paths\n     std::string prev_img_l_path = argv[1];\n     std::string prev_img_r_path = argv[2];\n     std::string cur_img_l_path = argv[1];\n"
+                },
+                {
+                    "date": 1647463903970,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -13,14 +13,14 @@\n     \n     // Disparity image data stucture\n     cv::Mat_<int16_t> disparity16;\n \n-    std::string folderName = \"run1images\";\n     // Image paths\n     std::string prev_img_l_path = argv[1];\n     std::string prev_img_r_path = argv[2];\n     std::string cur_img_l_path = argv[1];\n     std::string cur_img_r_path = argv[2];\n+    std::string folderName = \"run1images\";\n     \n     // Read images & store images in correct format\n     const cv::Mat prev_img_l =  cv::imread(prev_img_l_path, cv::IMREAD_GRAYSCALE);\n     const cv::Mat prev_img_r =  cv::imread(prev_img_r_path, cv::IMREAD_GRAYSCALE);\n"
+                },
+                {
+                    "date": 1647463947041,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -19,8 +19,11 @@\n     std::string prev_img_r_path = argv[2];\n     std::string cur_img_l_path = argv[1];\n     std::string cur_img_r_path = argv[2];\n     std::string folderName = \"run1images\";\n+    for(int i = 0; i < 128; i++) {\n+\n+    }\n     \n     // Read images & store images in correct format\n     const cv::Mat prev_img_l =  cv::imread(prev_img_l_path, cv::IMREAD_GRAYSCALE);\n     const cv::Mat prev_img_r =  cv::imread(prev_img_r_path, cv::IMREAD_GRAYSCALE);\n"
+                },
+                {
+                    "date": 1647464035044,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -20,9 +20,9 @@\n     std::string cur_img_l_path = argv[1];\n     std::string cur_img_r_path = argv[2];\n     std::string folderName = \"run1images\";\n     for(int i = 0; i < 128; i++) {\n-\n+        std::string lfileName = folderName + \"/left/\" + \n     }\n     \n     // Read images & store images in correct format\n     const cv::Mat prev_img_l =  cv::imread(prev_img_l_path, cv::IMREAD_GRAYSCALE);\n"
+                },
+                {
+                    "date": 1647464245630,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -2,8 +2,9 @@\n #include <opencv2/imgcodecs.hpp>\n #include <opencv2/highgui.hpp>\n #include <opencv2/calib3d/calib3d.hpp>\n #include <iostream>\n+#include <sstream> \n \n int main(int argc, char** argv) {\n \n     if(argc < 5) {\n@@ -20,9 +21,12 @@\n     std::string cur_img_l_path = argv[1];\n     std::string cur_img_r_path = argv[2];\n     std::string folderName = \"run1images\";\n     for(int i = 0; i < 128; i++) {\n-        std::string lfileName = folderName + \"/left/\" + \n+        std::stringstream ss;\n+        ss << folderName\n+        std::string lfileName;\n+        sprintf() folderName + \"/left/\" + \n     }\n     \n     // Read images & store images in correct format\n     const cv::Mat prev_img_l =  cv::imread(prev_img_l_path, cv::IMREAD_GRAYSCALE);\n"
+                },
+                {
+                    "date": 1647464255511,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -21,10 +21,10 @@\n     std::string cur_img_l_path = argv[1];\n     std::string cur_img_r_path = argv[2];\n     std::string folderName = \"run1images\";\n     for(int i = 0; i < 128; i++) {\n-        std::stringstream ss;\n-        ss << folderName\n+        std::stringstream lFileName;\n+        lFileName << folderName\n         std::string lfileName;\n         sprintf() folderName + \"/left/\" + \n     }\n     \n"
+                },
+                {
+                    "date": 1647464307036,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -22,11 +22,9 @@\n     std::string cur_img_r_path = argv[2];\n     std::string folderName = \"run1images\";\n     for(int i = 0; i < 128; i++) {\n         std::stringstream lFileName;\n-        lFileName << folderName\n-        std::string lfileName;\n-        sprintf() folderName + \"/left/\" + \n+        lFileName << folderName << \"/left/\" << setw(4) << i << \".jpg\";\n     }\n     \n     // Read images & store images in correct format\n     const cv::Mat prev_img_l =  cv::imread(prev_img_l_path, cv::IMREAD_GRAYSCALE);\n"
+                },
+                {
+                    "date": 1647464525972,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -22,9 +22,9 @@\n     std::string cur_img_r_path = argv[2];\n     std::string folderName = \"run1images\";\n     for(int i = 0; i < 128; i++) {\n         std::stringstream lFileName;\n-        lFileName << folderName << \"/left/\" << setw(4) << i << \".jpg\";\n+        lFileName << folderName << \"/left/\" << std::setw(4) << i << \".jpg\";\n     }\n     \n     // Read images & store images in correct format\n     const cv::Mat prev_img_l =  cv::imread(prev_img_l_path, cv::IMREAD_GRAYSCALE);\n"
+                },
+                {
+                    "date": 1647464549550,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -2,9 +2,10 @@\n #include <opencv2/imgcodecs.hpp>\n #include <opencv2/highgui.hpp>\n #include <opencv2/calib3d/calib3d.hpp>\n #include <iostream>\n-#include <sstream> \n+#include <sstream>\n+#include <iomanip>\n \n int main(int argc, char** argv) {\n \n     if(argc < 5) {\n"
+                },
+                {
+                    "date": 1647464597038,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -23,9 +23,11 @@\n     std::string cur_img_r_path = argv[2];\n     std::string folderName = \"run1images\";\n     for(int i = 0; i < 128; i++) {\n         std::stringstream lFileName;\n+        std::stringstream rFileName;\n         lFileName << folderName << \"/left/\" << std::setw(4) << i << \".jpg\";\n+        rFileName << folderName << \"/right/\" << std::setw(4) << i << \".jpg\";\n     }\n     \n     // Read images & store images in correct format\n     const cv::Mat prev_img_l =  cv::imread(prev_img_l_path, cv::IMREAD_GRAYSCALE);\n"
+                },
+                {
+                    "date": 1647465424378,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -21,20 +21,22 @@\n     std::string prev_img_r_path = argv[2];\n     std::string cur_img_l_path = argv[1];\n     std::string cur_img_r_path = argv[2];\n     std::string folderName = \"run1images\";\n+\n     for(int i = 0; i < 128; i++) {\n         std::stringstream lFileName;\n         std::stringstream rFileName;\n         lFileName << folderName << \"/left/\" << std::setw(4) << i << \".jpg\";\n         rFileName << folderName << \"/right/\" << std::setw(4) << i << \".jpg\";\n+        const cv::Mat cur_img_l =  cv::imread(cur_img_l_path, cv::IMREAD_GRAYSCALE);\n+        const cv::Mat cur_img_r =  cv::imread(cur_img_r_path, cv::IMREAD_GRAYSCALE);\n     }\n     \n+\n     // Read images & store images in correct format\n     const cv::Mat prev_img_l =  cv::imread(prev_img_l_path, cv::IMREAD_GRAYSCALE);\n     const cv::Mat prev_img_r =  cv::imread(prev_img_r_path, cv::IMREAD_GRAYSCALE);\n-    const cv::Mat cur_img_l =  cv::imread(cur_img_l_path, cv::IMREAD_GRAYSCALE);\n-    const cv::Mat cur_img_r =  cv::imread(cur_img_r_path, cv::IMREAD_GRAYSCALE);\n \n     //cv::imwrite(\"./disparity.png\",  (cv::Mat) disp_image);\n \n }\n"
+                },
+                {
+                    "date": 1647465436258,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -27,16 +27,11 @@\n         std::stringstream lFileName;\n         std::stringstream rFileName;\n         lFileName << folderName << \"/left/\" << std::setw(4) << i << \".jpg\";\n         rFileName << folderName << \"/right/\" << std::setw(4) << i << \".jpg\";\n-        const cv::Mat cur_img_l =  cv::imread(cur_img_l_path, cv::IMREAD_GRAYSCALE);\n-        const cv::Mat cur_img_r =  cv::imread(cur_img_r_path, cv::IMREAD_GRAYSCALE);\n+        const cv::Mat cur_img_l =  cv::imread(lFileName, cv::IMREAD_GRAYSCALE);\n+        const cv::Mat cur_img_r =  cv::imread(rFileName, cv::IMREAD_GRAYSCALE);\n     }\n     \n-\n-    // Read images & store images in correct format\n-    const cv::Mat prev_img_l =  cv::imread(prev_img_l_path, cv::IMREAD_GRAYSCALE);\n-    const cv::Mat prev_img_r =  cv::imread(prev_img_r_path, cv::IMREAD_GRAYSCALE);\n-\n     //cv::imwrite(\"./disparity.png\",  (cv::Mat) disp_image);\n \n }\n"
+                },
+                {
+                    "date": 1647465512663,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,8 +4,9 @@\n #include <opencv2/calib3d/calib3d.hpp>\n #include <iostream>\n #include <sstream>\n #include <iomanip>\n+#include <vo.h>\n \n int main(int argc, char** argv) {\n \n     if(argc < 5) {\n@@ -27,10 +28,12 @@\n         std::stringstream lFileName;\n         std::stringstream rFileName;\n         lFileName << folderName << \"/left/\" << std::setw(4) << i << \".jpg\";\n         rFileName << folderName << \"/right/\" << std::setw(4) << i << \".jpg\";\n-        const cv::Mat cur_img_l =  cv::imread(lFileName, cv::IMREAD_GRAYSCALE);\n-        const cv::Mat cur_img_r =  cv::imread(rFileName, cv::IMREAD_GRAYSCALE);\n+        const cv::Mat cur_img_l =  cv::imread(lFileName.str(), cv::IMREAD_GRAYSCALE);\n+        const cv::Mat cur_img_r =  cv::imread(rFileName.str(), cv::IMREAD_GRAYSCALE);\n+        Visual\n+\n     }\n     \n     //cv::imwrite(\"./disparity.png\",  (cv::Mat) disp_image);\n \n"
+                },
+                {
+                    "date": 1647465544431,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,9 +4,10 @@\n #include <opencv2/calib3d/calib3d.hpp>\n #include <iostream>\n #include <sstream>\n #include <iomanip>\n-#include <vo.h>\n+#include \"vo.h\"\n+namespace visual_odometry {\n \n int main(int argc, char** argv) {\n \n     if(argc < 5) {\n@@ -37,4 +38,6 @@\n     \n     //cv::imwrite(\"./disparity.png\",  (cv::Mat) disp_image);\n \n }\n+\n+} // namespace visual_odometry\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1647465619158,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -31,9 +31,10 @@\n         lFileName << folderName << \"/left/\" << std::setw(4) << i << \".jpg\";\n         rFileName << folderName << \"/right/\" << std::setw(4) << i << \".jpg\";\n         const cv::Mat cur_img_l =  cv::imread(lFileName.str(), cv::IMREAD_GRAYSCALE);\n         const cv::Mat cur_img_r =  cv::imread(rFileName.str(), cv::IMREAD_GRAYSCALE);\n-        Visual\n+        VisualOdometry::VisualOdometry vo;\n+        \n \n     }\n     \n     //cv::imwrite(\"./disparity.png\",  (cv::Mat) disp_image);\n"
+                },
+                {
+                    "date": 1647465629440,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -31,11 +31,11 @@\n         lFileName << folderName << \"/left/\" << std::setw(4) << i << \".jpg\";\n         rFileName << folderName << \"/right/\" << std::setw(4) << i << \".jpg\";\n         const cv::Mat cur_img_l =  cv::imread(lFileName.str(), cv::IMREAD_GRAYSCALE);\n         const cv::Mat cur_img_r =  cv::imread(rFileName.str(), cv::IMREAD_GRAYSCALE);\n-        VisualOdometry::VisualOdometry vo;\n-        \n+        VisualOdometry vo;\n \n+\n     }\n     \n     //cv::imwrite(\"./disparity.png\",  (cv::Mat) disp_image);\n \n"
+                },
+                {
+                    "date": 1647465649013,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -23,17 +23,21 @@\n     std::string prev_img_r_path = argv[2];\n     std::string cur_img_l_path = argv[1];\n     std::string cur_img_r_path = argv[2];\n     std::string folderName = \"run1images\";\n+    cv::Mat projMatrl = (cv::Mat_<float>(3, 4) << fx, 0., cx, 0., 0., fy, cy, 0., 0,  0., 1., 0.);\n+    cv::Mat projMatrr = (cv::Mat_<float>(3, 4) << fx, 0., cx, bf, 0., fy, cy, 0., 0,  0., 1., 0.);\n \n+    // initialize VO object\n+    VisualOdometry stereo_vo(projMatrl, projMatrr);\n+    VisualOdometry vo;\n     for(int i = 0; i < 128; i++) {\n         std::stringstream lFileName;\n         std::stringstream rFileName;\n         lFileName << folderName << \"/left/\" << std::setw(4) << i << \".jpg\";\n         rFileName << folderName << \"/right/\" << std::setw(4) << i << \".jpg\";\n         const cv::Mat cur_img_l =  cv::imread(lFileName.str(), cv::IMREAD_GRAYSCALE);\n         const cv::Mat cur_img_r =  cv::imread(rFileName.str(), cv::IMREAD_GRAYSCALE);\n-        VisualOdometry vo;\n \n \n     }\n     \n"
+                },
+                {
+                    "date": 1647465680921,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -26,11 +26,9 @@\n     std::string folderName = \"run1images\";\n     cv::Mat projMatrl = (cv::Mat_<float>(3, 4) << fx, 0., cx, 0., 0., fy, cy, 0., 0,  0., 1., 0.);\n     cv::Mat projMatrr = (cv::Mat_<float>(3, 4) << fx, 0., cx, bf, 0., fy, cy, 0., 0,  0., 1., 0.);\n \n-    // initialize VO object\n-    VisualOdometry stereo_vo(projMatrl, projMatrr);\n-    VisualOdometry vo;\n+    VisualOdometry vo(projMatrl, projMatrr);\n     for(int i = 0; i < 128; i++) {\n         std::stringstream lFileName;\n         std::stringstream rFileName;\n         lFileName << folderName << \"/left/\" << std::setw(4) << i << \".jpg\";\n"
+                },
+                {
+                    "date": 1647465691605,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -34,8 +34,9 @@\n         lFileName << folderName << \"/left/\" << std::setw(4) << i << \".jpg\";\n         rFileName << folderName << \"/right/\" << std::setw(4) << i << \".jpg\";\n         const cv::Mat cur_img_l =  cv::imread(lFileName.str(), cv::IMREAD_GRAYSCALE);\n         const cv::Mat cur_img_r =  cv::imread(rFileName.str(), cv::IMREAD_GRAYSCALE);\n+        vo.stereo_callback(cur_img_l, cur_img_r)\n \n \n     }\n     \n"
+                },
+                {
+                    "date": 1647467164084,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,9 +4,10 @@\n #include <opencv2/calib3d/calib3d.hpp>\n #include <iostream>\n #include <sstream>\n #include <iomanip>\n-#include \"vo.h\"\n+#include <vo.h>\n+\n namespace visual_odometry {\n \n int main(int argc, char** argv) {\n \n"
+                },
+                {
+                    "date": 1647467169985,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,9 +4,9 @@\n #include <opencv2/calib3d/calib3d.hpp>\n #include <iostream>\n #include <sstream>\n #include <iomanip>\n-#include <vo.h>\n+#include \"vo.h\"\n \n namespace visual_odometry {\n \n int main(int argc, char** argv) {\n"
+                },
+                {
+                    "date": 1647467333461,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,9 +4,8 @@\n #include <opencv2/calib3d/calib3d.hpp>\n #include <iostream>\n #include <sstream>\n #include <iomanip>\n-#include \"vo.h\"\n \n namespace visual_odometry {\n \n int main(int argc, char** argv) {\n"
+                },
+                {
+                    "date": 1647467353835,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,8 +4,9 @@\n #include <opencv2/calib3d/calib3d.hpp>\n #include <iostream>\n #include <sstream>\n #include <iomanip>\n+#include \"vo.h\"\n \n namespace visual_odometry {\n \n int main(int argc, char** argv) {\n"
+                },
+                {
+                    "date": 1647467396238,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,9 +4,9 @@\n #include <opencv2/calib3d/calib3d.hpp>\n #include <iostream>\n #include <sstream>\n #include <iomanip>\n-#include \"vo.h\"\n+#include \"include/vo.h\"\n \n namespace visual_odometry {\n \n int main(int argc, char** argv) {\n"
+                },
+                {
+                    "date": 1647467408432,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,9 +4,9 @@\n #include <opencv2/calib3d/calib3d.hpp>\n #include <iostream>\n #include <sstream>\n #include <iomanip>\n-#include \"include/vo.h\"\n+#include \"vo.h\"\n \n namespace visual_odometry {\n \n int main(int argc, char** argv) {\n"
+                },
+                {
+                    "date": 1647467427450,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,9 +4,9 @@\n #include <opencv2/calib3d/calib3d.hpp>\n #include <iostream>\n #include <sstream>\n #include <iomanip>\n-#include \"vo.h\"\n+#include \"stereo_visual_odometry/include/\"\n \n namespace visual_odometry {\n \n int main(int argc, char** argv) {\n"
+                },
+                {
+                    "date": 1647467433180,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,9 +4,9 @@\n #include <opencv2/calib3d/calib3d.hpp>\n #include <iostream>\n #include <sstream>\n #include <iomanip>\n-#include \"stereo_visual_odometry/include/\"\n+#include \"stereo_visual_odometry/include/vo.h\"\n \n namespace visual_odometry {\n \n int main(int argc, char** argv) {\n"
+                },
+                {
+                    "date": 1647467473775,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,9 +4,9 @@\n #include <opencv2/calib3d/calib3d.hpp>\n #include <iostream>\n #include <sstream>\n #include <iomanip>\n-#include \"stereo_visual_odometry/include/vo.h\"\n+#include \"vo.h\"\n \n namespace visual_odometry {\n \n int main(int argc, char** argv) {\n"
+                },
+                {
+                    "date": 1647468460018,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,9 +4,9 @@\n #include <opencv2/calib3d/calib3d.hpp>\n #include <iostream>\n #include <sstream>\n #include <iomanip>\n-#include \"vo.h\"\n+#include \"../include/vo.h\"\n \n namespace visual_odometry {\n \n int main(int argc, char** argv) {\n"
+                },
+                {
+                    "date": 1647468634419,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -35,9 +35,9 @@\n         lFileName << folderName << \"/left/\" << std::setw(4) << i << \".jpg\";\n         rFileName << folderName << \"/right/\" << std::setw(4) << i << \".jpg\";\n         const cv::Mat cur_img_l =  cv::imread(lFileName.str(), cv::IMREAD_GRAYSCALE);\n         const cv::Mat cur_img_r =  cv::imread(rFileName.str(), cv::IMREAD_GRAYSCALE);\n-        vo.stereo_callback(cur_img_l, cur_img_r)\n+        vo.stereo_callback(cur_img_l, cur_img_r);\n \n \n     }\n     \n"
+                },
+                {
+                    "date": 1647468716497,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -24,8 +24,15 @@\n     std::string prev_img_r_path = argv[2];\n     std::string cur_img_l_path = argv[1];\n     std::string cur_img_r_path = argv[2];\n     std::string folderName = \"run1images\";\n+\n+    fx= 282.06762\n+    fy= 282.06762\n+    cx= 290.79884\n+    cy= 182.52132\n+    bf= -16.61097\n+\n     cv::Mat projMatrl = (cv::Mat_<float>(3, 4) << fx, 0., cx, 0., 0., fy, cy, 0., 0,  0., 1., 0.);\n     cv::Mat projMatrr = (cv::Mat_<float>(3, 4) << fx, 0., cx, bf, 0., fy, cy, 0., 0,  0., 1., 0.);\n \n     VisualOdometry vo(projMatrl, projMatrr);\n"
+                },
+                {
+                    "date": 1647468724538,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -25,13 +25,13 @@\n     std::string cur_img_l_path = argv[1];\n     std::string cur_img_r_path = argv[2];\n     std::string folderName = \"run1images\";\n \n-    fx= 282.06762\n-    fy= 282.06762\n-    cx= 290.79884\n-    cy= 182.52132\n-    bf= -16.61097\n+    fx= 282.06762;\n+    fy= 282.06762;\n+    cx= 290.79884;\n+    cy= 182.52132;\n+    bf= -16.61097;\n \n     cv::Mat projMatrl = (cv::Mat_<float>(3, 4) << fx, 0., cx, 0., 0., fy, cy, 0., 0,  0., 1., 0.);\n     cv::Mat projMatrr = (cv::Mat_<float>(3, 4) << fx, 0., cx, bf, 0., fy, cy, 0., 0,  0., 1., 0.);\n \n"
+                },
+                {
+                    "date": 1647468737852,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -25,13 +25,13 @@\n     std::string cur_img_l_path = argv[1];\n     std::string cur_img_r_path = argv[2];\n     std::string folderName = \"run1images\";\n \n-    fx= 282.06762;\n-    fy= 282.06762;\n-    cx= 290.79884;\n-    cy= 182.52132;\n-    bf= -16.61097;\n+    float fx= 282.06762;\n+    float fy= 282.06762;\n+    float cx= 290.79884;\n+    float cy= 182.52132;\n+    float bf= -16.61097;\n \n     cv::Mat projMatrl = (cv::Mat_<float>(3, 4) << fx, 0., cx, 0., 0., fy, cy, 0., 0,  0., 1., 0.);\n     cv::Mat projMatrr = (cv::Mat_<float>(3, 4) << fx, 0., cx, bf, 0., fy, cy, 0., 0,  0., 1., 0.);\n \n"
+                },
+                {
+                    "date": 1647469618853,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -43,10 +43,8 @@\n         rFileName << folderName << \"/right/\" << std::setw(4) << i << \".jpg\";\n         const cv::Mat cur_img_l =  cv::imread(lFileName.str(), cv::IMREAD_GRAYSCALE);\n         const cv::Mat cur_img_r =  cv::imread(rFileName.str(), cv::IMREAD_GRAYSCALE);\n         vo.stereo_callback(cur_img_l, cur_img_r);\n-\n-\n     }\n     \n     //cv::imwrite(\"./disparity.png\",  (cv::Mat) disp_image);\n \n"
+                },
+                {
+                    "date": 1647469631582,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,9 +4,10 @@\n #include <opencv2/calib3d/calib3d.hpp>\n #include <iostream>\n #include <sstream>\n #include <iomanip>\n-#include \"../include/vo.h\"\n+// #include \"../include/vo.h\"\n+#include \"vo.h\"\n \n namespace visual_odometry {\n \n int main(int argc, char** argv) {\n"
+                },
+                {
+                    "date": 1647469645696,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,10 +4,9 @@\n #include <opencv2/calib3d/calib3d.hpp>\n #include <iostream>\n #include <sstream>\n #include <iomanip>\n-// #include \"../include/vo.h\"\n-#include \"vo.h\"\n+#include \"../include/vo.h\"\n \n namespace visual_odometry {\n \n int main(int argc, char** argv) {\n"
+                },
+                {
+                    "date": 1647469724200,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,9 +4,9 @@\n #include <opencv2/calib3d/calib3d.hpp>\n #include <iostream>\n #include <sstream>\n #include <iomanip>\n-#include \"../include/vo.h\"\n+#include \"vo.h\"\n \n namespace visual_odometry {\n \n int main(int argc, char** argv) {\n"
+                },
+                {
+                    "date": 1647469734479,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,9 +4,9 @@\n #include <opencv2/calib3d/calib3d.hpp>\n #include <iostream>\n #include <sstream>\n #include <iomanip>\n-#include \"vo.h\"\n+#include \"../include/vo.h\"\n \n namespace visual_odometry {\n \n int main(int argc, char** argv) {\n"
+                },
+                {
+                    "date": 1647469815273,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,9 +4,9 @@\n #include <opencv2/calib3d/calib3d.hpp>\n #include <iostream>\n #include <sstream>\n #include <iomanip>\n-#include \"../include/vo.h\"\n+#include <../include/vo.h>\n \n namespace visual_odometry {\n \n int main(int argc, char** argv) {\n"
+                },
+                {
+                    "date": 1647469822891,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,9 +4,9 @@\n #include <opencv2/calib3d/calib3d.hpp>\n #include <iostream>\n #include <sstream>\n #include <iomanip>\n-#include <../include/vo.h>\n+#include <../include>\n \n namespace visual_odometry {\n \n int main(int argc, char** argv) {\n"
+                },
+                {
+                    "date": 1647469828505,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,9 +4,9 @@\n #include <opencv2/calib3d/calib3d.hpp>\n #include <iostream>\n #include <sstream>\n #include <iomanip>\n-#include <../include>\n+#include \"../include\"\n \n namespace visual_odometry {\n \n int main(int argc, char** argv) {\n"
+                },
+                {
+                    "date": 1647469847421,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,9 +4,9 @@\n #include <opencv2/calib3d/calib3d.hpp>\n #include <iostream>\n #include <sstream>\n #include <iomanip>\n-#include \"../include\"\n+#include \"../include/vo.h\"\n \n namespace visual_odometry {\n \n int main(int argc, char** argv) {\n@@ -46,8 +46,8 @@\n         vo.stereo_callback(cur_img_l, cur_img_r);\n     }\n     \n     //cv::imwrite(\"./disparity.png\",  (cv::Mat) disp_image);\n-\n+    return 0;\n }\n \n } // namespace visual_odometry\n\\ No newline at end of file\n"
+                }
+            ],
+            "date": 1647463379735,
+            "name": "Commit-0",
+            "content": "#include <opencv2/core.hpp>\n#include <opencv2/imgcodecs.hpp>\n#include <opencv2/highgui.hpp>\n#include <opencv2/calib3d/calib3d.hpp>\n#include <iostream>\n\n\nint main(int argc, char** argv) {\n\n    if(argc < 5) {\n      std::cout << \"Too few arguments\" << std::endl;\n      return -1;\n    }\n    \n    // Disparity image data stucture\n    cv::Mat_<int16_t> disparity16;\n\n    // Image paths\n    std::string prev_img_l_path = argv[1];\n    std::string prev_img_r_path = argv[2];\n    std::string cur_img_l_path = argv[1];\n    std::string cur_img_r_path = argv[2];\n    \n    // Read images & store images in correct format\n    const cv::Mat prev_img_l =  cv::imread(prev_img_l_path, cv::IMREAD_GRAYSCALE);\n    const cv::Mat prev_img_r =  cv::imread(prev_img_r_path, cv::IMREAD_GRAYSCALE);\n    const cv::Mat cur_img_l =  cv::imread(cur_img_l_path, cv::IMREAD_GRAYSCALE);\n    const cv::Mat cur_img_r =  cv::imread(cur_img_r_path, cv::IMREAD_GRAYSCALE);\n\n    //cv::imwrite(\"./disparity.png\",  (cv::Mat) disp_image);\n\n}\n"
+        }
+    ]
+}

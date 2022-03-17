@@ -1,0 +1,62 @@
+{
+    "sourceFile": ".vscode/c_cpp_properties.json",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 11,
+            "patches": [
+                {
+                    "date": 1647467112557,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1647467118500,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -2,10 +2,10 @@\n     \"configurations\": [\n         {\n             \"name\": \"Linux\",\n             \"includePath\": [\n-                \"${workspaceFolder}/**\"\n-                \"${workspaceFolder}/include/*.h\"\n+                \"${workspaceFolder}/**\",\n+                \"${workspaceFolder}/include/*.h\",\n             ],\n             \"defines\": [],\n             \"compilerPath\": \"/usr/bin/gcc\",\n             \"cStandard\": \"gnu11\",\n"
+                },
+                {
+                    "date": 1647467135131,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -3,9 +3,9 @@\n         {\n             \"name\": \"Linux\",\n             \"includePath\": [\n                 \"${workspaceFolder}/**\",\n-                \"${workspaceFolder}/include/*.h\",\n+                \"${workspaceFolder}/include/**\",\n             ],\n             \"defines\": [],\n             \"compilerPath\": \"/usr/bin/gcc\",\n             \"cStandard\": \"gnu11\",\n"
+                },
+                {
+                    "date": 1647467174735,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -2,10 +2,10 @@\n     \"configurations\": [\n         {\n             \"name\": \"Linux\",\n             \"includePath\": [\n+                \"${workspaceFolder}/include/**\"\n                 \"${workspaceFolder}/**\",\n-                \"${workspaceFolder}/include/**\",\n             ],\n             \"defines\": [],\n             \"compilerPath\": \"/usr/bin/gcc\",\n             \"cStandard\": \"gnu11\",\n"
+                },
+                {
+                    "date": 1647467180715,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -2,10 +2,10 @@\n     \"configurations\": [\n         {\n             \"name\": \"Linux\",\n             \"includePath\": [\n-                \"${workspaceFolder}/include/**\"\n-                \"${workspaceFolder}/**\",\n+                \"${workspaceFolder}/include/**\",\n+                \"${workspaceFolder}/**\"\n             ],\n             \"defines\": [],\n             \"compilerPath\": \"/usr/bin/gcc\",\n             \"cStandard\": \"gnu11\",\n"
+                },
+                {
+                    "date": 1647467206032,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -2,9 +2,9 @@\n     \"configurations\": [\n         {\n             \"name\": \"Linux\",\n             \"includePath\": [\n-                \"${workspaceFolder}/include/**\",\n+                \"${workspaceFolder}/include/vo.h\",\n                 \"${workspaceFolder}/**\"\n             ],\n             \"defines\": [],\n             \"compilerPath\": \"/usr/bin/gcc\",\n"
+                },
+                {
+                    "date": 1647467831767,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -2,13 +2,13 @@\n     \"configurations\": [\n         {\n             \"name\": \"Linux\",\n             \"includePath\": [\n-                \"${workspaceFolder}/include/vo.h\",\n+                \"${workspaceFolder}/include\",\n                 \"${workspaceFolder}/**\"\n             ],\n             \"defines\": [],\n-            \"compilerPath\": \"/usr/bin/gcc\",\n+            \"compilerPath\": \"/usr/bin/g++\",\n             \"cStandard\": \"gnu11\",\n             \"cppStandard\": \"gnu++14\",\n             \"intelliSenseMode\": \"linux-gcc-arm64\"\n         }\n"
+                },
+                {
+                    "date": 1647467880456,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,9 +6,9 @@\n                 \"${workspaceFolder}/include\",\n                 \"${workspaceFolder}/**\"\n             ],\n             \"defines\": [],\n-            \"compilerPath\": \"/usr/bin/g++\",\n+            \"compilerPath\": \"/usr/bin/gcc\",\n             \"cStandard\": \"gnu11\",\n             \"cppStandard\": \"gnu++14\",\n             \"intelliSenseMode\": \"linux-gcc-arm64\"\n         }\n"
+                },
+                {
+                    "date": 1647467901118,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -2,9 +2,9 @@\n     \"configurations\": [\n         {\n             \"name\": \"Linux\",\n             \"includePath\": [\n-                \"${workspaceFolder}/include\",\n+                \"${workspaceFolder}/include/**\",\n                 \"${workspaceFolder}/**\"\n             ],\n             \"defines\": [],\n             \"compilerPath\": \"/usr/bin/gcc\",\n"
+                },
+                {
+                    "date": 1647468112591,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -9,8 +9,9 @@\n             \"defines\": [],\n             \"compilerPath\": \"/usr/bin/gcc\",\n             \"cStandard\": \"gnu11\",\n             \"cppStandard\": \"gnu++14\",\n+            // \"intelliSenseMode\": \"linux-gcc-arm64\"\n             \"intelliSenseMode\": \"linux-gcc-arm64\"\n         }\n     ],\n     \"version\": 4\n"
+                },
+                {
+                    "date": 1647468122349,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -9,10 +9,9 @@\n             \"defines\": [],\n             \"compilerPath\": \"/usr/bin/gcc\",\n             \"cStandard\": \"gnu11\",\n             \"cppStandard\": \"gnu++14\",\n-            // \"intelliSenseMode\": \"linux-gcc-arm64\"\n-            \"intelliSenseMode\": \"linux-gcc-arm64\"\n+            \"intelliSenseMode\": \"linux-gcc-x64\"\n         }\n     ],\n     \"version\": 4\n }\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1647468135480,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -9,9 +9,9 @@\n             \"defines\": [],\n             \"compilerPath\": \"/usr/bin/gcc\",\n             \"cStandard\": \"gnu11\",\n             \"cppStandard\": \"gnu++14\",\n-            \"intelliSenseMode\": \"linux-gcc-x64\"\n+            \"intelliSenseMode\": \"linux-gcc-arm64\"\n         }\n     ],\n     \"version\": 4\n }\n\\ No newline at end of file\n"
+                }
+            ],
+            "date": 1647467112556,
+            "name": "Commit-0",
+            "content": "{\n    \"configurations\": [\n        {\n            \"name\": \"Linux\",\n            \"includePath\": [\n                \"${workspaceFolder}/**\"\n                \"${workspaceFolder}/include/*.h\"\n            ],\n            \"defines\": [],\n            \"compilerPath\": \"/usr/bin/gcc\",\n            \"cStandard\": \"gnu11\",\n            \"cppStandard\": \"gnu++14\",\n            \"intelliSenseMode\": \"linux-gcc-arm64\"\n        }\n    ],\n    \"version\": 4\n}"
+        }
+    ]
+}
