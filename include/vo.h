@@ -26,6 +26,7 @@
 #include <iterator>
 #include <opencv2/calib3d/calib3d.hpp>
 #include <opencv2/features2d/features2d.hpp>
+#include <opencv2/xfeatures2d.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/opencv.hpp>
@@ -37,20 +38,20 @@
 /************
  * ROS ONLY *
  ************/
-#include "ros/ros.h"
-#include "sensor_msgs/Image.h"
-#include "std_msgs/Int32MultiArray.h"
-#include "nav_msgs/Odometry.h"
-#include "geometry_msgs/Quaternion.h"
-#include <tf/transform_broadcaster.h>
-#include <message_filters/subscriber.h>
-#include <message_filters/synchronizer.h>
-#include <message_filters/sync_policies/approximate_time.h>
-#include <cv_bridge/cv_bridge.h>
+// #include "ros/ros.h"
+// #include "sensor_msgs/Image.h"
+// #include "std_msgs/Int32MultiArray.h"
+// #include "nav_msgs/Odometry.h"
+// #include "geometry_msgs/Quaternion.h"
+// #include <tf/transform_broadcaster.h>
+// #include <message_filters/subscriber.h>
+// #include <message_filters/synchronizer.h>
+// #include <message_filters/sync_policies/approximate_time.h>
+// #include <cv_bridge/cv_bridge.h>
 
-#include <eigen3/Eigen/Dense>
-#include <eigen3/Eigen/Core>
-#include <eigen3/Eigen/Geometry> 
+// #include <eigen3/Eigen/Dense>
+// #include <eigen3/Eigen/Core>
+// #include <eigen3/Eigen/Geometry> 
 /* END ROS ONLY */
 
 /************
@@ -69,22 +70,35 @@ extern "C" {
 /* END CFS ONLY */
 
 namespace visual_odometry {
+
+/**
+ * @brief Number of buckets to divide the image into.
+ */
+const int BUCKET_START_ROW = 2;
+
 /**
  * @brief Number of buckets along each axis of the image.
  * In total, there will be BUCKETS_PER_AXIS * BUCKETS_PER_AXIS
  * buckets.
  */
 // TODO @Future change to different bucket sizes per axis
-int BUCKETS_PER_AXIS = 10;
+const int BUCKETS_PER_AXIS = 10;
 /**
  * @brief Maximum number of features per bucket
  */
-int FEATURES_PER_BUCKET = 1;
+const int FEATURES_PER_BUCKET = 4;
+
 /**
  * @brief Ignore all features that have been around but not detected
  * for this many frames.
  */
-int AGE_THRESHOLD = 10;
+const int AGE_THRESHOLD = 10;
+
+/**
+ * @brief Minimum confidence for the robot to report 
+ */
+const int FAST_THRESHOLD = 20;
+
 
 /**
  * @brief A set of locations for image features and their ages.
@@ -100,7 +114,27 @@ public:
    * the number of iterations that points[i] has been around.
    */
   std::vector<int> ages;
+
+  /**
+   * @brief A parallel set to points; strengths[i] contains
+   * the clarity of the features reported by the feature detector.
+   */
+  std::vector<int> strengths;
+
+  /**
+   * @brief Return the size of the feature set. Note that
+   * points.size() == ages.size()
+   * 
+   * @return size: number of points in the set.
+   */
   int size() { return points.size(); }
+  
+  /**
+   * @brief Sort all of the features and their ages based on the
+   * (x, y) tuple
+   * 
+   */
+  void sortFeatures();
   /**
    * @brief Updates the feature set to only include a subset of the
    * original features which give a good spread throughout the image.
@@ -108,12 +142,9 @@ public:
    * @param image only use for getting dimension of the image.
    *
    * @param bucket_size bucket size in pixel is bucket_size*bucket_size.
-   *
-   * @param features_per_bucket: number of selected features per bucket.
    */
 
-  void filterByBucketLocation(const cv::Mat &image, const int bucket_size,
-                              const int features_per_bucket);
+  void filterByBucketLocation(const cv::Mat &image, const int bucket_size);
 
   /**
    * @brief Apply a feature detection algorithm over the image to generate new
@@ -142,12 +173,20 @@ public:
   ~Bucket();
 
   /**
+   * @brief Rank how good a feature is based on it's current
+   * age and strength. Older points that have survived many
+   * iterations are desirable, as are ones that were detected
+   * strongly.
+   */
+  int Bucket::compute_score(const int age, const int strength);
+  /**
    * @brief Add a feature to the bucket
    *
    * @param point The location of the feature to add
    * @param age The number of iterations since this feature was detected.
+   * @param strength The strength of the detected feature.
    */
-  void add_feature(const cv::Point2f point, const int age);
+  void add_feature(const cv::Point2f point, const int age, const int strength);
   
   /**
    * @return int The size of the feature set
@@ -202,10 +241,11 @@ public:
  * points.
  *
  * @param image The image we're detecting.
+ * @param response_strengths: A vector to fill with the response strength of each newly detected feature.
  *
  * @return A vector with the locations of all newly detected features.
  */
-std::vector<cv::Point2f> featureDetectionFast(const cv::Mat image);
+std::vector<cv::Point2f> featureDetectionFast(const cv::Mat image, std::vector<float>& response_strengths);
 
 /**
  * @brief Given parallel vectors of points, ages, and the status of those points,
@@ -214,14 +254,14 @@ std::vector<cv::Point2f> featureDetectionFast(const cv::Mat image);
  * @param points[0..4] vectors of points to update based on status, each with
  * the same length as status_all.
  *
- * @param ages Current ages of each of the points.
+ * @param currentFeatures Current set of features we will need to update.
  *
  * @param status_all a vector with 1 If the point is valid, and 0 if it should be discarded.
  */
 void deleteFeaturesWithFailureStatus(
     std::vector<cv::Point2f> &points0, std::vector<cv::Point2f> &points1,
     std::vector<cv::Point2f> &points2, std::vector<cv::Point2f> &points3,
-    std::vector<cv::Point2f> &points4, std::vector<int> &ages,
+    std::vector<cv::Point2f> &points4, FeatureSet &currentFeatures,
     const std::vector<bool> &status_all);
 
 /**

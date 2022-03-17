@@ -13,7 +13,7 @@
  * @author 		Carnegie Mellon University, Planetary Robotics Lab
  *
  ****************************************************************/
-#include "vo.h"
+#include "../include/vo.h"
 
 namespace visual_odometry {
 VisualOdometry::VisualOdometry(const cv::Mat leftCameraProjection,
@@ -115,7 +115,7 @@ void VisualOdometry::stereo_callback(const cv::Mat &imageLeft,
   void deleteFeaturesWithFailureStatus(
       std::vector<cv::Point2f> & points0, std::vector<cv::Point2f> & points1,
       std::vector<cv::Point2f> & points2, std::vector<cv::Point2f> & points3,
-      std::vector<cv::Point2f> & points4, std::vector<int> & ages,
+      std::vector<cv::Point2f> & points4, FeatureSet& current_features,
       const std::vector<bool> & status_all) {
     // getting rid of points for which the KLT tracking failed or those who have
     // gone outside the frame
@@ -126,8 +126,8 @@ void VisualOdometry::stereo_callback(const cv::Mat &imageLeft,
       cv::Point2f pt2 = points2.at(i - indexCorrection);
       cv::Point2f pt3 = points3.at(i - indexCorrection);
       cv::Point2f pt4 = points4.at(i - indexCorrection);
-      // // no need to check bounds for pt4 since it's equal to pt0 at
-      // // all valid locations
+      // no need to check bounds for pt4 since it's equal to pt0 at
+      // all valid locations
       if ((status_all.at(i) == 0)) {
         points0.erase(points0.begin() + (i - indexCorrection));
         points1.erase(points1.begin() + (i - indexCorrection));
@@ -135,7 +135,8 @@ void VisualOdometry::stereo_callback(const cv::Mat &imageLeft,
         points3.erase(points3.begin() + (i - indexCorrection));
         points4.erase(points4.begin() + (i - indexCorrection));
 
-        ages.erase(ages.begin() + (i - indexCorrection));
+        current_features.ages.erase(current_features.ages.begin() + (i - indexCorrection));
+        current_features.strengths.erase(current_features.strengths.begin() + (i - indexCorrection));
         indexCorrection++;
       }
     }
@@ -160,14 +161,10 @@ void VisualOdometry::stereo_callback(const cv::Mat &imageLeft,
     std::vector<uchar> status3;
 
     // Sparse iterative version of the Lucas-Kanade optical flow in pyramids.
-    calcOpticalFlowPyrLK(img_0, img_1, points_0, points_1, status0, err,
-                         winSize, 3, termcrit, 0, 0.001);
-    calcOpticalFlowPyrLK(img_1, img_3, points_1, points_3, status1, err,
-                         winSize, 3, termcrit, 0, 0.001);
-    calcOpticalFlowPyrLK(img_3, img_2, points_3, points_2, status2, err,
-                         winSize, 3, termcrit, 0, 0.001);
-    calcOpticalFlowPyrLK(img_2, img_0, points_2, points_0_return,
-                         status3, err, winSize, 3, termcrit, 0, 0.001);
+    calcOpticalFlowPyrLK(img_0, img_1, points_0, points_1, status0, err, winSize, 3, termcrit, cv::OPTFLOW_LK_GET_MIN_EIGENVALS, 0.01);
+    calcOpticalFlowPyrLK(img_1, img_2, points_1, points_2, status1, err, winSize, 3, termcrit, cv::OPTFLOW_LK_GET_MIN_EIGENVALS, 0.01);
+    calcOpticalFlowPyrLK(img_2, img_3, points_2, points_3, status2, err, winSize, 3, termcrit, cv::OPTFLOW_LK_GET_MIN_EIGENVALS, 0.01);
+    calcOpticalFlowPyrLK(img_3, img_0, points_1, points_0_return, status3, err, winSize, 3, termcrit, cv::OPTFLOW_LK_GET_MIN_EIGENVALS, 0.01);
     if (status3.size() != status0.size() or points_0.size() != points_0_return.size()) {
       std::cerr << "Size of returned points was not correct!!\n";
     }
@@ -305,35 +302,27 @@ void VisualOdometry::stereo_callback(const cv::Mat &imageLeft,
     
     std::vector<cv::Point2f> pointsLeftReturn_t0; // feature points to check
                                                   // circular matching validation
-
-    // Append new features with old features.
-    currentVOFeatures.appendFeaturesFromImage(imageLeft_t0);
+    if(currentVOFeatures.size() < 4000) {
+        // update feature set with detected features from the image.
+        currentVOFeatures.appendFeaturesFromImage(imageLeft_t0);
+    }
 
     // --------------------------------------------------------
     // Feature tracking using KLT tracker, bucketing and circular matching.
     // --------------------------------------------------------
-    int bucket_size =
-        std::min(imageLeft_t0.rows, imageLeft_t0.cols) / BUCKETS_PER_AXIS;
-    int features_per_bucket = FEATURES_PER_BUCKET;
-
-    // Filter features in currentVOFeatures to leave just one per bucket.
-    currentVOFeatures.filterByBucketLocation(imageLeft_t0, bucket_size,
-                      features_per_bucket);
 
     pointsLeftT0 = currentVOFeatures.points;
+    if (currentVOFeatures.points.size() == 0) return; // early exit
 
-    std::vector<uchar> matchingStatus = circularMatching(imageLeft_t0, imageRight_t0, imageLeft_t1, imageRight_t1,
-                     pointsLeftT0, pointsRightT0, pointsLeftT1, pointsRightT1,
-                     pointsLeftReturn_t0);
-
-
+    std::vector<uchar> matchingStatus = circularMatching(imageLeft_t0, imageRight_t0, imageRight_t1, imageLeft_t1, 
+                     pointsLeftT0, pointsRightT0, pointsRightT1, pointsLeftT1, pointsLeftReturn_t0);
 
     // Check if circled back points are in range of original points.
     std::vector<bool> status = findUnmovedPoints(pointsLeftT0, pointsLeftReturn_t0, 0);
-    // TODO: Shouldn't we be modifying currentVOFeatures and the ages array here as well?
-    // (Can do this by using deleteFeaturesWithFailureStatus instead) - Alex
+    
+    // Only keep points that were matched correctly and are in the image bounds.
     for(int i = 0; i < status.size(); i++) {
-      if(!status[i] || !matchingStatus[i] ||
+      if(!matchingStatus[i] ||
           (pointsLeftT0[i].x < 0) || (pointsLeftT0[i].y < 0) ||
               (pointsLeftT0[i].x >= imageLeft_t0.rows) || (pointsLeftT0[i].y >= imageLeft_t0.cols) ||
               (pointsLeftT1[i].x < 0) || (pointsLeftT1[i].y < 0) ||
@@ -349,7 +338,7 @@ void VisualOdometry::stereo_callback(const cv::Mat &imageLeft,
 
     deleteFeaturesWithFailureStatus(
         pointsLeftT0, pointsRightT0, pointsLeftT1, pointsRightT1, pointsLeftReturn_t0,
-        currentVOFeatures.ages, status);
+        currentVOFeatures, status);
 
     for (int i = 0; i < currentVOFeatures.ages.size(); ++i) {
       currentVOFeatures.ages[i] += 1;
