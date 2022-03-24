@@ -1,5 +1,6 @@
 #include "vo.h"
-namespace visual_odometry {
+using namespace visual_odometry;
+
 Bucket::Bucket(int size) { max_size = size; }
 
 Bucket::~Bucket() {}
@@ -23,6 +24,7 @@ void Bucket::add_feature(const cv::Point2f point, const int age, const int stren
     if (size() < max_size) {
       features.points.push_back(point);
       features.ages.push_back(age);
+      features.strengths.push_back(strength);
     } else {
         // Replace the feauture with the lowest score.
         int score_min = compute_score(features.ages[0],features.strengths[0]);
@@ -46,14 +48,19 @@ void Bucket::add_feature(const cv::Point2f point, const int age, const int stren
   }
 }
 
-std::vector<cv::Point2f> featureDetectionFast(const cv::Mat image, std::vector<float> & response_strength) {
+std::vector<cv::Point2f> visual_odometry::featureDetectionFast(const cv::Mat image, std::vector<float> & response_strength) {
   std::vector<cv::Point2f> points;
   std::vector<cv::KeyPoint> keypoints;
   bool nonmaxSuppression = true;
-  cv::FAST(image, keypoints, FAST_THRESHOLD, nonmaxSuppression);
+  try {
+    cv::FAST(image, keypoints, FAST_THRESHOLD, nonmaxSuppression);
+  } catch(const cv::Exception& ex) {
+    //maybe the image is empty or something?
+    std::cout << ex.err << std::endl;
+  }
   cv::KeyPoint::convert(keypoints, points, std::vector<int>());
   response_strength.reserve(points.size());
-  for (const auto keypoint : keypoints) {
+  for (const auto &keypoint : keypoints) {
     response_strength.push_back(keypoint.response); 
   }
   return points;
@@ -62,6 +69,7 @@ std::vector<cv::Point2f> featureDetectionFast(const cv::Mat image, std::vector<f
 void FeatureSet::appendFeaturesFromImage(const cv::Mat & image) {
     /* Fast feature detection */
     std::vector<float>  response_strength;
+    
     std::vector<cv::Point2f>  points_new = featureDetectionFast(image, response_strength);
 
     points.insert(points.end(), points_new.begin(), points_new.end());
@@ -69,40 +77,40 @@ void FeatureSet::appendFeaturesFromImage(const cv::Mat & image) {
     ages.insert(ages.end(), ages_new.begin(), ages_new.end());
     strengths.insert(strengths.end(), response_strength.begin(), response_strength.end());
 
-    /* Bucketing features */
-    const int bucket_size = std::min(image.rows,image.cols)/BUCKETS_PER_AXIS;
-
-    filterByBucketLocation(image, bucket_size);
+    filterByBucketLocation(image);
 }
 
-void FeatureSet::filterByBucketLocation(const cv::Mat & image, const int bucket_size) {
+int ceiling_division(int dividend, int divisor) {
+    return (dividend + divisor - 1) / divisor;
+}
+
+void FeatureSet::filterByBucketLocationInternal(const cv::Mat & image, const int buckets_along_height,
+  const int buckets_along_width, const int bucket_start_row, const int features_per_bucket) {
     int image_height = image.rows;
     int image_width = image.cols;
-    int buckets_nums_height = image_height/bucket_size;
-    int buckets_nums_width = image_width/bucket_size;
-    int buckets_number = buckets_nums_height * buckets_nums_width;
+    /* Bucketing features */
+    int bucket_height = ceiling_division(image_height, buckets_along_height);
+    int bucket_width = ceiling_division(image_width, buckets_along_width);
 
     std::vector<Bucket> buckets;
 
-    // TODO: Why are these <= rather than <???
     // initialize all the buckets
-    for (int buckets_idx_height = 0; buckets_idx_height <= buckets_nums_height; buckets_idx_height++)
+    for (int buckets_idx_height = 0; buckets_idx_height < buckets_along_height; buckets_idx_height++)
     {
-        for (int buckets_idx_width = 0; buckets_idx_width <= buckets_nums_width; buckets_idx_width++)
+        for (int buckets_idx_width = 0; buckets_idx_width < buckets_along_width; buckets_idx_width++)
         {
             // Ignore top rows of image.
-            if (buckets_idx_height > BUCKET_START_ROW) buckets.push_back(Bucket(FEATURES_PER_BUCKET));
+            if (buckets_idx_height >= bucket_start_row) buckets.push_back(Bucket(features_per_bucket));
             else buckets.push_back(Bucket(0));
         }
     }
-
     /* Put all current features into buckets by their location and scores */
-    int buckets_nums_height_idx, buckets_nums_width_idx, buckets_idx;
-    for (int i = 0; i < points.size(); ++i)
+    int bucket_height_idx, bucket_row_idx, buckets_idx;
+    for (unsigned int i = 0; i < points.size(); ++i)
     {
-        buckets_nums_height_idx = points[i].y/bucket_size;
-        buckets_nums_width_idx = points[i].x/bucket_size;
-        buckets_idx = buckets_nums_height_idx*buckets_nums_width + buckets_nums_width_idx;
+        bucket_height_idx = points[i].y/bucket_height;
+        bucket_row_idx = points[i].x/bucket_width;
+        buckets_idx = bucket_height_idx*buckets_along_width + bucket_row_idx;
         buckets[buckets_idx].add_feature(points[i], ages[i], strengths[i]);
     }
 
@@ -110,11 +118,11 @@ void FeatureSet::filterByBucketLocation(const cv::Mat & image, const int bucket_
     ages.clear();
     points.clear();
     strengths.clear();
-    for (int buckets_idx_height = 0; buckets_idx_height <= buckets_nums_height; buckets_idx_height++)
+    for (int buckets_idx_height = 0; buckets_idx_height < buckets_along_height; buckets_idx_height++)
     {
-        for (int buckets_idx_width = 0; buckets_idx_width <= buckets_nums_width; buckets_idx_width++)
+        for (int buckets_idx_width = 0; buckets_idx_width < buckets_along_width; buckets_idx_width++)
         {
-            buckets_idx = buckets_idx_height*buckets_nums_width + buckets_idx_width;
+            buckets_idx = buckets_idx_height*buckets_along_width + buckets_idx_width;
             FeatureSet bucket_features = buckets[buckets_idx].features;
             points.insert(points.end(), bucket_features.points.begin(), bucket_features.points.end());
             ages.insert(ages.end(), bucket_features.ages.begin(), bucket_features.ages.end());
@@ -122,4 +130,6 @@ void FeatureSet::filterByBucketLocation(const cv::Mat & image, const int bucket_
         }
     }
 }
-} // namespace visual_odometry
+void FeatureSet::filterByBucketLocation(const cv::Mat & image) {
+  filterByBucketLocationInternal(image, BUCKETS_ALONG_HEIGHT, BUCKETS_ALONG_WIDTH, BUCKET_START_ROW, FEATURES_PER_BUCKET);
+}

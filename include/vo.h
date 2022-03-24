@@ -34,7 +34,9 @@
 #include <sstream>
 #include <string>
 #include <vector>
- 
+#define dbg(x) std::cerr << " >>> " << #x << " = " << x << std::endl;
+#define dbga(a) std::cerr << " >>> " << #a << " = "; for(unsigned int xtw = 0; xtw < a.size(); xtw++) std::cerr << a[xtw] << " "; std::cerr << std::endl;
+#define dbgstr(a) std::cerr << " >>> " << a << std::endl;
 /************
  * ROS ONLY *
  ************/
@@ -78,11 +80,11 @@ const int BUCKET_START_ROW = 2;
 
 /**
  * @brief Number of buckets along each axis of the image.
- * In total, there will be BUCKETS_PER_AXIS * BUCKETS_PER_AXIS
+ * In total, there will be BUCKETS_ALONG_HEIGHT * BUCKETS_ALONG_WIDTH
  * buckets.
  */
-// TODO @Future change to different bucket sizes per axis
-const int BUCKETS_PER_AXIS = 10;
+const int BUCKETS_ALONG_HEIGHT = 10;
+const int BUCKETS_ALONG_WIDTH = 10;
 /**
  * @brief Maximum number of features per bucket
  */
@@ -97,7 +99,7 @@ const int AGE_THRESHOLD = 10;
 /**
  * @brief Minimum confidence for the robot to report 
  */
-const int FAST_THRESHOLD = 20;
+const int FAST_THRESHOLD = 10;
 
 
 /**
@@ -130,21 +132,17 @@ public:
   int size() { return points.size(); }
   
   /**
-   * @brief Sort all of the features and their ages based on the
-   * (x, y) tuple
-   * 
-   */
-  void sortFeatures();
-  /**
    * @brief Updates the feature set to only include a subset of the
    * original features which give a good spread throughout the image.
    *
    * @param image only use for getting dimension of the image.
-   *
-   * @param bucket_size bucket size in pixel is bucket_size*bucket_size.
    */
 
-  void filterByBucketLocation(const cv::Mat &image, const int bucket_size);
+  void filterByBucketLocation(const cv::Mat &image);
+
+  /* @brief Variant with constant parameters passed in, for testing. */
+  void filterByBucketLocationInternal(const cv::Mat & image, const int buckets_along_height,
+    const int buckets_along_width, const int bucket_start_row, const int features_per_bucket);
 
   /**
    * @brief Apply a feature detection algorithm over the image to generate new
@@ -178,7 +176,7 @@ public:
    * iterations are desirable, as are ones that were detected
    * strongly.
    */
-  int Bucket::compute_score(const int age, const int strength);
+  int compute_score(const int age, const int strength);
   /**
    * @brief Add a feature to the bucket
    *
@@ -277,9 +275,9 @@ void deleteFeaturesWithFailureStatus(
  * @return matchingStatus An array parallel to the points arrays which is true
  *      at points that were matched correctly.
  */
-std::vector<uchar> circularMatching(const cv::Mat img_0, const cv::Mat img_1, 
-                        const cv::Mat img_2,
-                        const cv::Mat img_3, std::vector<cv::Point2f> & points_0,
+std::vector<bool> circularMatching(const cv::Mat img_0, const cv::Mat img_1, 
+                        const cv::Mat img_2, const cv::Mat img_3,
+                        std::vector<cv::Point2f> & points_0,
                         std::vector<cv::Point2f> & points_1,
                         std::vector<cv::Point2f> & points_2,
                         std::vector<cv::Point2f> & points_3,
@@ -320,18 +318,7 @@ cv::Vec3f rotationMatrixToEulerAngles(const cv::Mat &R);
  */
 std::vector<bool> findUnmovedPoints(const std::vector<cv::Point2f> &points_1,
                      const std::vector<cv::Point2f> &points_2,
-                     const int threshold);
-
-/**
- * @brief Update a vector of points, removing all of the points[i]
- * in which status[i] is false.
- * 
- * @param points The vector of points to update.
- *
- * @param status A vector indicating which points to remove.
- */
-void removeInvalidPoints(std::vector<cv::Point2f> &points,
-                         const std::vector<bool> &status);
+                     const float threshold);
 
 /**
  * @brief Compute the translation and rotation that needs to occur
