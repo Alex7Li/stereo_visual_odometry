@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 71,
+            "activePatchIndex": 75,
             "patches": [
                 {
                     "date": 1648577246911,
@@ -292,6 +292,22 @@
                 {
                     "date": 1648604817523,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -27,9 +27,9 @@\n for i in range(len(xs)):\n     xs[i], ys[i] = R1 @ np.array([xs[i], ys[i]])\n     gtxs[i], gtys[i] = R2 @ np.array([gtxs[i], gtys[i]])\n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n-plt.scatter(xs, ys, color='r')\n+plt.scatter(xs, ys, color=color)\n plt.scatter(gtxs, gtys, color='b')\n plt.xlim(-.5,4.5)\n plt.ylim(-.3,.3)\n plt.show()\n"
+                },
+                {
+                    "date": 1648604988872,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -27,9 +27,9 @@\n for i in range(len(xs)):\n     xs[i], ys[i] = R1 @ np.array([xs[i], ys[i]])\n     gtxs[i], gtys[i] = R2 @ np.array([gtxs[i], gtys[i]])\n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n-plt.scatter(xs, ys, color=color)\n+plt.scatter(xs, ys, color=colors)\n plt.scatter(gtxs, gtys, color='b')\n plt.xlim(-.5,4.5)\n plt.ylim(-.3,.3)\n plt.show()\n"
+                },
+                {
+                    "date": 1648604994976,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -12,9 +12,9 @@\n         ys.append(y)\n         gtxs.append(gtx - x_0)\n         gtys.append(gty - y_0)\n def make_R(theta):\n-    # return np.eye(2)\n+    return np.eye(2)\n     return np.array([\n         [np.cos(theta), -np.sin(theta)],\n         [np.sin(theta), np.cos(theta)],\n     ])\n"
+                },
+                {
+                    "date": 1648605004801,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -29,8 +29,8 @@\n     gtxs[i], gtys[i] = R2 @ np.array([gtxs[i], gtys[i]])\n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n plt.scatter(xs, ys, color=colors)\n plt.scatter(gtxs, gtys, color='b')\n-plt.xlim(-.5,4.5)\n-plt.ylim(-.3,.3)\n+# plt.xlim(-.5,4.5)\n+# plt.ylim(-.3,.3)\n plt.show()\n \n"
+                },
+                {
+                    "date": 1648605019424,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -12,9 +12,9 @@\n         ys.append(y)\n         gtxs.append(gtx - x_0)\n         gtys.append(gty - y_0)\n def make_R(theta):\n-    return np.eye(2)\n+    # return np.eye(2)\n     return np.array([\n         [np.cos(theta), -np.sin(theta)],\n         [np.sin(theta), np.cos(theta)],\n     ])\n@@ -29,8 +29,8 @@\n     gtxs[i], gtys[i] = R2 @ np.array([gtxs[i], gtys[i]])\n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n plt.scatter(xs, ys, color=colors)\n plt.scatter(gtxs, gtys, color='b')\n-# plt.xlim(-.5,4.5)\n-# plt.ylim(-.3,.3)\n+plt.xlim(-.5,4.5)\n+plt.ylim(-.3,.3)\n plt.show()\n \n"
                 }
             ],
             "date": 1648577246911,
