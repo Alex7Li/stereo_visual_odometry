@@ -23,15 +23,17 @@ VisualOdometry::VisualOdometry(const cv::Mat leftCameraProjection,
 }
 
 VisualOdometry::~VisualOdometry() {}
-void VisualOdometry::stereo_callback(const cv::Mat &imageLeft,
+std::pair<cv::Mat, cv::Mat> VisualOdometry::stereo_callback(const cv::Mat &imageLeft,
                                       const cv::Mat &imageRight) {
+    cv::Mat rotation = cv::Mat::eye(3, 3, CV_64F);
+    cv::Mat translation = cv::Mat::zeros(3, 1, CV_64F);
     // Wait until we have at least two time steps of data
     // to begin predicting the change in pose.
     if (!frame_id) {
       imageLeftT0_ = imageLeft;
       imageRightT0_ = imageRight;
       frame_id++;
-      return;
+      return std::make_pair(translation, rotation);
     }
 
     imageLeftT1_ = imageLeft;
@@ -51,7 +53,7 @@ void VisualOdometry::stereo_callback(const cv::Mat &imageLeft,
       // There are not enough features to fully determine
       // equations for pose estimation, so presume nothing and exit.
       frame_id++;
-      return;
+      return std::make_pair(translation, rotation);
     }
 
     // ---------------------
@@ -71,14 +73,15 @@ void VisualOdometry::stereo_callback(const cv::Mat &imageLeft,
     // ------------------------------------------------
     // Integrating
     // ------------------------------------------------
-    cv::Vec3f rotation_euler = rotationMatrixToEulerAngles(rotation);
+    // cv::Vec3f rotation_euler = rotationMatrixToEulerAngles(rotation);
     // Don't perform an update if the output is unusually large, indicates a error elsewhere.
-    if (abs(rotation_euler[1]) < 0.1 && abs(rotation_euler[0]) < 0.1 &&
-        abs(rotation_euler[2]) < 0.1) {
-      integrateOdometryStereo(frame_pose, rotation, translation);
-    }
+    // if (abs(rotation_euler[1]) < 0.1 && abs(rotation_euler[0]) < 0.1 &&
+    //     abs(rotation_euler[2]) < 0.1) {
+    //   integrateOdometryStereo(frame_pose, rotation, translation);
+    // } else {
+    //   dbgstr("Likely error, rotation was huge.");
+    // }
     cv::Mat xyz = frame_pose.col(3).clone();
-    std::cout << xyz.at<double>(0);
     cv::Mat R = frame_pose(cv::Rect(0, 0, 3, 3));
 
     // publish
@@ -106,6 +109,7 @@ void VisualOdometry::stereo_callback(const cv::Mat &imageLeft,
     //         "odom"));
     // }
     frame_id++;
+    return std::make_pair(translation, rotation);
   }
 
   // --------------------------------
@@ -130,6 +134,7 @@ void visual_odometry::deleteFeaturesWithFailureStatus(
 
         currentFeatures.ages.erase(currentFeatures.ages.begin() + (i - indexCorrection));
         currentFeatures.strengths.erase(currentFeatures.strengths.begin() + (i - indexCorrection));
+        currentFeatures.points.erase(currentFeatures.points.begin() + (i - indexCorrection));
         indexCorrection++;
       }
     }
@@ -142,6 +147,10 @@ std::vector<bool> visual_odometry::circularMatching(const cv::Mat imgLeft_t0, co
                         std::vector<cv::Point2f> & pointsLeft_t1,
                         std::vector<cv::Point2f> & pointsRight_t1,
                         std::vector<cv::Point2f> & points_0_return) {
+    if(pointsLeft_t0.size() == 0){
+      std::vector<bool> status_all; 
+      return status_all;
+    }
     std::vector<float> err;
 
     cv::Size winSize =
@@ -165,12 +174,6 @@ std::vector<bool> visual_odometry::circularMatching(const cv::Mat imgLeft_t0, co
     calcOpticalFlowPyrLK(imgRight_t0, imgRight_t1, pointsRight_t0, pointsRight_t1, status1, err, winSize, 3, termcrit, cv::OPTFLOW_LK_GET_MIN_EIGENVALS, 0.01);
     calcOpticalFlowPyrLK(imgRight_t1, imgLeft_t1, pointsRight_t1, pointsLeft_t1, status2, err, winSize, 3, termcrit, cv::OPTFLOW_LK_GET_MIN_EIGENVALS, 0.01);
     calcOpticalFlowPyrLK(imgLeft_t1, imgLeft_t0, pointsLeft_t1, points_0_return, status3, err, winSize, 3, termcrit, cv::OPTFLOW_LK_GET_MIN_EIGENVALS, 0.01);
-    if (status3.size() != status0.size() or pointsLeft_t0.size() != points_0_return.size()) {
-      std::cerr << "Size of returned points was not correct!!" << std::endl;
-    }
-    assert(status0.size() == status1.size());
-    assert(status1.size() == status2.size());
-    assert(status2.size() == status3.size());
     std::vector<bool> status_all(status0.size());
     for(unsigned int i = 0; i < status3.size(); i++) {
       status_all[i] = status0[i] | status1[i] | status2[i] | status3[i];
@@ -182,19 +185,9 @@ std::vector<bool> visual_odometry::circularMatching(const cv::Mat imgLeft_t0, co
 // --------------------------------
 // https://github.com/hjamal3/stereo_visual_odometry/blob/main/src/utils.cpp
 // --------------------------------
-bool isRotationMatrix(const cv::Mat &R)
-{
-    cv::Mat Rt;
-    transpose(R, Rt);
-    cv::Mat shouldBeIdentity = Rt * R;
-    cv::Mat I = cv::Mat::eye(3,3, shouldBeIdentity.type());
-     
-    return  norm(I, shouldBeIdentity) < 1e-6;
-}
 void visual_odometry::integrateOdometryStereo(cv::Mat &frame_pose, const cv::Mat &rotation,
                               const cv::Mat &translation_stereo) {
   cv::Mat rigid_body_transformation;
-  assert(isRotationMatrix(rotation));
 
   cv::Mat addup = (cv::Mat_<double>(1, 4) << 0, 0, 0, 1);
 
@@ -211,8 +204,8 @@ void visual_odometry::integrateOdometryStereo(cv::Mat &frame_pose, const cv::Mat
   {
     frame_pose = frame_pose * rigid_body_transformation;
   } else {
-    std::cout << "[WARNING] scale below 0.1, or incorrect translation"
-              << std::endl;
+    // std::cout << "[WARNING] scale below 0.1, or incorrect translation"
+    //           << std::endl;
   }
 }
 
@@ -305,6 +298,10 @@ void visual_odometry::matchingFeatures(
       // update feature set with detected features from the image.
       currentVOFeatures.appendFeaturesFromImage(imageLeft_t0);
   }
+  if(currentVOFeatures.size() < 100) {
+      // Just append a bunch of random features
+      currentVOFeatures.appendGridOfFeatures(imageLeft_t0);
+  }
 
   // --------------------------------------------------------
   // Feature tracking using KLT tracker, bucketing and circular matching.
@@ -313,22 +310,22 @@ void visual_odometry::matchingFeatures(
   pointsLeftT0 = currentVOFeatures.points;
   if (currentVOFeatures.points.size() == 0) return; // early exit
 
-  std::vector<bool> matchingStatus = circularMatching(imageLeft_t0, imageRight_t0, imageRight_t1, imageLeft_t1, 
-                    pointsLeftT0, pointsRightT0, pointsRightT1, pointsLeftT1, pointsLeftReturn_t0);
+  std::vector<bool> matchingStatus = circularMatching(imageLeft_t0, imageRight_t0, imageLeft_t1, imageRight_t1, 
+                    pointsLeftT0, pointsRightT0, pointsLeftT1, pointsRightT1, pointsLeftReturn_t0);
 
   // Check if circled back points are in range of original points.
-  std::vector<bool> status = findUnmovedPoints(pointsLeftT0, pointsLeftReturn_t0, 0.5);
+  std::vector<bool> status = findUnmovedPoints(pointsLeftT0, pointsLeftReturn_t0, 1.999);
   // Only keep points that were matched correctly and are in the image bounds.
   for(unsigned int i = 0; i < status.size(); i++) {
     if(!matchingStatus[i] ||
         (pointsLeftT0[i].x < 0) || (pointsLeftT0[i].y < 0) ||
-            (pointsLeftT0[i].x >= imageLeft_t0.rows) || (pointsLeftT0[i].y >= imageLeft_t0.cols) ||
+            (pointsLeftT0[i].y >= imageLeft_t0.rows) || (pointsLeftT0[i].x >= imageLeft_t0.cols) ||
             (pointsLeftT1[i].x < 0) || (pointsLeftT1[i].y < 0) ||
-            (pointsLeftT1[i].x >= imageLeft_t1.rows) || (pointsLeftT1[i].y >= imageLeft_t1.cols) ||
+            (pointsLeftT1[i].y >= imageLeft_t1.rows) || (pointsLeftT1[i].x >= imageLeft_t1.cols) ||
             (pointsRightT0[i].x < 0) || (pointsRightT0[i].y < 0) ||
-            (pointsRightT0[i].x >= imageRight_t0.rows) || (pointsRightT0[i].y >= imageRight_t0.cols) ||
+            (pointsRightT0[i].y >= imageRight_t0.rows) || (pointsRightT0[i].x >= imageRight_t0.cols) ||
             (pointsRightT1[i].x < 0) || (pointsRightT1[i].y < 0) ||
-            (pointsRightT1[i].x >= imageRight_t1.rows) || (pointsRightT1[i].y >= imageRight_t1.cols)
+            (pointsRightT1[i].y >= imageRight_t1.rows) || (pointsRightT1[i].x >= imageRight_t1.cols)
             // no need to check bounds for pointsLeftReturn_t0 since it's equal to pointsLeftT0 at
             // all valid locations
             ) {

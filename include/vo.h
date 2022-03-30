@@ -151,6 +151,12 @@ public:
    * @param image The image to obtain all points from.
    */
   void appendFeaturesFromImage(const cv::Mat &image);
+  /**
+   * @brief  Create a grid of feature points to cover a given image
+   *
+   * @param image Image dimensions are used for getting boundaries of the grid.
+   */
+  void appendGridOfFeatures(const cv::Mat &image);
 };
 
 /**
@@ -204,8 +210,6 @@ private:
   cv::Mat imageRightT1_, imageLeftT1_;
 
   /* Initial pose variables. */
-  cv::Mat rotation = cv::Mat::eye(3, 3, CV_64F);
-  cv::Mat translation = cv::Mat::zeros(3, 1, CV_64F);
   cv::Mat frame_pose = cv::Mat::eye(4, 4, CV_64F);
 
   /* Set of features currently tracked. */
@@ -230,8 +234,10 @@ public:
    * @param image_left The left image from stereo camera
    *
    * @param image_right The right image from stereo camera
+   * @return (translation, rotation): The 3x1 translation and 3x3 rotation matrix of the robot,
+   * relative to the previous frame.
    */
-  void stereo_callback(const cv::Mat &image_left, const cv::Mat &image_right);
+  std::pair<cv::Mat, cv::Mat> stereo_callback(const cv::Mat &image_left, const cv::Mat &image_right);
 };
 
 /**
@@ -283,20 +289,6 @@ std::vector<bool> circularMatching(const cv::Mat img_0, const cv::Mat img_1,
                         std::vector<cv::Point2f> & points_3,
                         std::vector<cv::Point2f> & points_0_return);
 
-/**
- * @brief Compute the next pose from the current one
- * given the rotation and translation in the frame.
- * Essentially a multiplication of homogeneous transforms.
- * 
- * @param frame_pose The original position of the robot, will be modified.
- *
- * @param rotation The rotation to go through.
- *
- * @param translation_stereo The translation to go through.
- */
-void integrateOdometryStereo(cv::Mat &frame_pose,
-                             const cv::Mat &rotation,
-                             const cv::Mat &translation_stereo);
 /**
  * @brief Compute the three euler angles for a given rotation matrix.
  *
@@ -359,5 +351,19 @@ void matchingFeatures(const cv::Mat &imageLeftT0, const cv::Mat &imageRightT0,
                       std::vector<cv::Point2f> &pointsRightT0,
                       std::vector<cv::Point2f> &pointsLeftT1,
                       std::vector<cv::Point2f> &pointsRightT1);
+
+/**
+ * @brief Compute the next pose from the current one
+ * given the rotation and translation in the frame.
+ * Essentially a multiplication of homogeneous transforms.
+ * 
+ * @param frame_pose The original position of the robot, will be modified.
+ *
+ * @param rotation The rotation to go through.
+ *
+ * @param translation_stereo The translation to go through.
+ */
+void integrateOdometryStereo(cv::Mat &frame_pose, const cv::Mat &rotation,
+                              const cv::Mat &translation_stereo);
 } // namespace visual_odometry
 #endif

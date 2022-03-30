@@ -79,6 +79,29 @@ void FeatureSet::appendFeaturesFromImage(const cv::Mat & image) {
 
     filterByBucketLocation(image);
 }
+void FeatureSet::appendGridOfFeatures(const cv::Mat & image) {
+    /* Fast feature detection */
+    int point_rows = 2 * BUCKETS_ALONG_HEIGHT * int(sqrt(FEATURES_PER_BUCKET));
+    int point_cols = 2 * BUCKETS_ALONG_WIDTH * int(sqrt(FEATURES_PER_BUCKET));
+    int n_rows = image.rows;
+    int n_cols = image.cols;
+    std::vector<cv::Point2f>  points_new(point_rows * point_cols);
+    for(int row = 0; row < point_rows; row++) {
+      for(int col = 0; col < point_cols; col++) {
+        int r = (row * n_rows) / point_rows;
+        int c = (col * n_cols) / point_cols;
+        points_new[row + col * point_rows] = cv::Point2f(c, r);
+      }
+    }
+
+    points.insert(points.end(), points_new.begin(), points_new.end());
+    std::vector<int>  ages_new(points_new.size(), 0);
+    std::vector<int>  response_strength(points_new.size(), 0);
+    ages.insert(ages.end(), ages_new.begin(), ages_new.end());
+    strengths.insert(strengths.end(), response_strength.begin(), response_strength.end());
+
+    // filterByBucketLocation(image);
+}
 
 int ceiling_division(int dividend, int divisor) {
     return (dividend + divisor - 1) / divisor;
