@@ -1,0 +1,22 @@
+{
+    "sourceFile": ".vscode/launch.json",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1647550623489,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1647550661724,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -27,8 +27,8 @@\n           \"ignoreFailures\": true\n         }\n       ],\n       \"preLaunchTask\": \"C/C++: clang++ build active file\",\n-      \"miDebuggerPath\": \"/usr/bin/gdbus\"\n+      \"miDebuggerPath\": \"/usr/bin/gdb\"\n     }\n   ]\n }\n\\ No newline at end of file\n"
+                }
+            ],
+            "date": 1647550623489,
+            "name": "Commit-0",
+            "content": "{\n  // Use IntelliSense to learn about possible attributes.\n  // Hover to view descriptions of existing attributes.\n  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387\n  \"version\": \"0.2.0\",\n  \"configurations\": [\n    {\n      \"name\": \"clang++ - Build and debug active file\",\n      \"type\": \"cppdbg\",\n      \"request\": \"launch\",\n      \"program\": \"${fileDirname}/${fileBasenameNoExtension}\",\n      \"args\": [],\n      \"stopAtEntry\": false,\n      \"cwd\": \"${fileDirname}\",\n      \"environment\": [],\n      \"externalConsole\": false,\n      \"MIMode\": \"lldb\",\n      \"setupCommands\": [\n        {\n          \"description\": \"Enable pretty-printing for gdb\",\n          \"text\": \"-enable-pretty-printing\",\n          \"ignoreFailures\": true\n        },\n        {\n          \"description\": \"Set Disassembly Flavor to Intel\",\n          \"text\": \"-gdb-set disassembly-flavor intel\",\n          \"ignoreFailures\": true\n        }\n      ],\n      \"preLaunchTask\": \"C/C++: clang++ build active file\",\n      \"miDebuggerPath\": \"/usr/bin/gdbus\"\n    }\n  ]\n}"
+        }
+    ]
+}

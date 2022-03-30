@@ -1,0 +1,302 @@
+{
+    "sourceFile": "visualize_data.py",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 71,
+            "patches": [
+                {
+                    "date": 1648577246911,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1648577267577,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,3 +1,5 @@\n+xs, ys, gtxs, gtys = [],[],[],[]\n with open('run1/result.csv') as f:\n-    \n+    for line in f.readlines():\n+        \n def \n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1648577278345,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,5 +1,6 @@\n xs, ys, gtxs, gtys = [],[],[],[]\n with open('run1/result.csv') as f:\n     for line in f.readlines():\n+        x,y,gtx,gty = line.split(',')\n         \n def \n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1648577292495,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,6 +1,9 @@\n xs, ys, gtxs, gtys = [],[],[],[]\n with open('run1/result.csv') as f:\n     for line in f.readlines():\n         x,y,gtx,gty = line.split(',')\n-        \n+        xs.append(x)\n+        ys.append(y)\n+        gtxs.appends(gtx)\n+        gtys.appends(gty)\n def \n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1648577322516,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -5,5 +5,9 @@\n         xs.append(x)\n         ys.append(y)\n         gtxs.appends(gtx)\n         gtys.appends(gty)\n-def \n\\ No newline at end of file\n+import matplotlib.pyplot as plt\n+\n+plt.show(xs, ys, 'b')\n+plt.show(gtxs, gtys, 'r')\n+\n"
+                },
+                {
+                    "date": 1648577359896,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -7,7 +7,8 @@\n         gtxs.appends(gtx)\n         gtys.appends(gty)\n import matplotlib.pyplot as plt\n \n-plt.show(xs, ys, 'b')\n-plt.show(gtxs, gtys, 'r')\n+plt.plot(xs, ys, 'b')\n+plt.plot(gtxs, gtys, 'r')\n+plot.show()\n \n"
+                },
+                {
+                    "date": 1648577366680,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -3,10 +3,10 @@\n     for line in f.readlines():\n         x,y,gtx,gty = line.split(',')\n         xs.append(x)\n         ys.append(y)\n-        gtxs.appends(gtx)\n-        gtys.appends(gty)\n+        gtxs.append(gtx)\n+        gtys.append(gty)\n import matplotlib.pyplot as plt\n \n plt.plot(xs, ys, 'b')\n plt.plot(gtxs, gtys, 'r')\n"
+                },
+                {
+                    "date": 1648577635010,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -9,6 +9,6 @@\n import matplotlib.pyplot as plt\n \n plt.plot(xs, ys, 'b')\n plt.plot(gtxs, gtys, 'r')\n-plot.show()\n+plt.show()\n \n"
+                },
+                {
+                    "date": 1648577668643,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,8 +1,8 @@\n xs, ys, gtxs, gtys = [],[],[],[]\n with open('run1/result.csv') as f:\n     for line in f.readlines():\n-        x,y,gtx,gty = line.split(',')\n+        x,y,gtx,gty = map(double, line.split(','))\n         xs.append(x)\n         ys.append(y)\n         gtxs.append(gtx)\n         gtys.append(gty)\n"
+                },
+                {
+                    "date": 1648577676609,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,8 +1,8 @@\n xs, ys, gtxs, gtys = [],[],[],[]\n with open('run1/result.csv') as f:\n     for line in f.readlines():\n-        x,y,gtx,gty = map(double, line.split(','))\n+        x,y,gtx,gty = map(float, line.split(','))\n         xs.append(x)\n         ys.append(y)\n         gtxs.append(gtx)\n         gtys.append(gty)\n"
+                },
+                {
+                    "date": 1648577685807,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,6 +1,7 @@\n xs, ys, gtxs, gtys = [],[],[],[]\n with open('run1/result.csv') as f:\n+    f.readline()\n     for line in f.readlines():\n         x,y,gtx,gty = map(float, line.split(','))\n         xs.append(x)\n         ys.append(y)\n"
+                },
+                {
+                    "date": 1648581147265,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,7 +1,8 @@\n xs, ys, gtxs, gtys = [],[],[],[]\n with open('run1/result.csv') as f:\n     f.readline()\n+    _, _, x_0, y_0 = map(float, line.split(','))\n     for line in f.readlines():\n         x,y,gtx,gty = map(float, line.split(','))\n         xs.append(x)\n         ys.append(y)\n"
+                },
+                {
+                    "date": 1648581152534,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -3,10 +3,10 @@\n     f.readline()\n     _, _, x_0, y_0 = map(float, line.split(','))\n     for line in f.readlines():\n         x,y,gtx,gty = map(float, line.split(','))\n-        xs.append(x)\n-        ys.append(y)\n+        xs.append(x + x_0)\n+        ys.append(y + y_0)\n         gtxs.append(gtx)\n         gtys.append(gty)\n import matplotlib.pyplot as plt\n \n"
+                },
+                {
+                    "date": 1648581163200,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,4 +1,5 @@\n+import matplotlib.pyplot as plt\n xs, ys, gtxs, gtys = [],[],[],[]\n with open('run1/result.csv') as f:\n     f.readline()\n     _, _, x_0, y_0 = map(float, line.split(','))\n@@ -7,9 +8,8 @@\n         xs.append(x + x_0)\n         ys.append(y + y_0)\n         gtxs.append(gtx)\n         gtys.append(gty)\n-import matplotlib.pyplot as plt\n \n plt.plot(xs, ys, 'b')\n plt.plot(gtxs, gtys, 'r')\n plt.show()\n"
+                },
+                {
+                    "date": 1648581185867,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,9 +1,9 @@\n import matplotlib.pyplot as plt\n xs, ys, gtxs, gtys = [],[],[],[]\n with open('run1/result.csv') as f:\n     f.readline()\n-    _, _, x_0, y_0 = map(float, line.split(','))\n+    _, _, x_0, y_0 = map(float, f.readline().split(','))\n     for line in f.readlines():\n         x,y,gtx,gty = map(float, line.split(','))\n         xs.append(x + x_0)\n         ys.append(y + y_0)\n"
+                },
+                {
+                    "date": 1648581599693,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -9,8 +9,8 @@\n         ys.append(y + y_0)\n         gtxs.append(gtx)\n         gtys.append(gty)\n \n-plt.plot(xs, ys, 'b')\n-plt.plot(gtxs, gtys, 'r')\n+plt.plot(xs, ys, cm.rainbow(np.linspace(0, 1, len(ys))))\n+plt.plot(gtxs, gtys, cm.rainbow(np.linspace(0, 1, len(ys))))\n plt.show()\n \n"
+                },
+                {
+                    "date": 1648581608546,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -10,7 +10,7 @@\n         gtxs.append(gtx)\n         gtys.append(gty)\n \n plt.plot(xs, ys, cm.rainbow(np.linspace(0, 1, len(ys))))\n-plt.plot(gtxs, gtys, cm.rainbow(np.linspace(0, 1, len(ys))))\n+plt.plot(gtxs, gtys, cm.rainbow(np.linspace(0, 1, len(gtys))))\n plt.show()\n \n"
+                },
+                {
+                    "date": 1648581632729,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,5 +1,6 @@\n import matplotlib.pyplot as plt\n+import matplotlib.cm as cm\n xs, ys, gtxs, gtys = [],[],[],[]\n with open('run1/result.csv') as f:\n     f.readline()\n     _, _, x_0, y_0 = map(float, f.readline().split(','))\n"
+                },
+                {
+                    "date": 1648581642561,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,6 +1,7 @@\n import matplotlib.pyplot as plt\n import matplotlib.cm as cm\n+import numpy as np\n xs, ys, gtxs, gtys = [],[],[],[]\n with open('run1/result.csv') as f:\n     f.readline()\n     _, _, x_0, y_0 = map(float, f.readline().split(','))\n"
+                },
+                {
+                    "date": 1648581685966,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -11,8 +11,9 @@\n         ys.append(y + y_0)\n         gtxs.append(gtx)\n         gtys.append(gty)\n \n-plt.plot(xs, ys, cm.rainbow(np.linspace(0, 1, len(ys))))\n-plt.plot(gtxs, gtys, cm.rainbow(np.linspace(0, 1, len(gtys))))\n+colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n+plt.plot(xs, ys, color=colorrs)\n+plt.plot(gtxs, gtys, color=colors)\n plt.show()\n \n"
+                },
+                {
+                    "date": 1648581691623,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -12,8 +12,8 @@\n         gtxs.append(gtx)\n         gtys.append(gty)\n \n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n-plt.plot(xs, ys, color=colorrs)\n+plt.plot(xs, ys, color=colors)\n plt.plot(gtxs, gtys, color=colors)\n plt.show()\n \n"
+                },
+                {
+                    "date": 1648581707981,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -12,8 +12,9 @@\n         gtxs.append(gtx)\n         gtys.append(gty)\n \n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n+for i in enumerate(ys)\n plt.plot(xs, ys, color=colors)\n plt.plot(gtxs, gtys, color=colors)\n plt.show()\n \n"
+                },
+                {
+                    "date": 1648581744723,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -12,9 +12,9 @@\n         gtxs.append(gtx)\n         gtys.append(gty)\n \n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n-for i in enumerate(ys)\n-plt.plot(xs, ys, color=colors)\n-plt.plot(gtxs, gtys, color=colors)\n+# for i in enumerate(ys):\n+plt.scatter(xs, ys, color=colors)\n+plt.scatter(gtxs, gtys, color=colors)\n plt.show()\n \n"
+                },
+                {
+                    "date": 1648581757319,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -12,9 +12,8 @@\n         gtxs.append(gtx)\n         gtys.append(gty)\n \n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n-# for i in enumerate(ys):\n plt.scatter(xs, ys, color=colors)\n plt.scatter(gtxs, gtys, color=colors)\n plt.show()\n \n"
+                },
+                {
+                    "date": 1648582861919,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,12 +6,12 @@\n     f.readline()\n     _, _, x_0, y_0 = map(float, f.readline().split(','))\n     for line in f.readlines():\n         x,y,gtx,gty = map(float, line.split(','))\n-        xs.append(x + x_0)\n-        ys.append(y + y_0)\n-        gtxs.append(gtx)\n-        gtys.append(gty)\n+        xs.append(x)\n+        ys.append(y)\n+        gtxs.append(gtx - x_0)\n+        gtys.append(gty - y_0)\n \n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n plt.scatter(xs, ys, color=colors)\n plt.scatter(gtxs, gtys, color=colors)\n"
+                },
+                {
+                    "date": 1648582898271,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -10,9 +10,8 @@\n         xs.append(x)\n         ys.append(y)\n         gtxs.append(gtx - x_0)\n         gtys.append(gty - y_0)\n-\n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n plt.scatter(xs, ys, color=colors)\n plt.scatter(gtxs, gtys, color=colors)\n plt.show()\n"
+                },
+                {
+                    "date": 1648582932396,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,12 +6,17 @@\n     f.readline()\n     _, _, x_0, y_0 = map(float, f.readline().split(','))\n     for line in f.readlines():\n         x,y,gtx,gty = map(float, line.split(','))\n+        theta = math.pi/2\n+        x, y = np.array(\n+            np.sin()\n+        )\n         xs.append(x)\n         ys.append(y)\n         gtxs.append(gtx - x_0)\n         gtys.append(gty - y_0)\n+\n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n plt.scatter(xs, ys, color=colors)\n plt.scatter(gtxs, gtys, color=colors)\n plt.show()\n"
+                },
+                {
+                    "date": 1648582965850,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -8,9 +8,10 @@\n     for line in f.readlines():\n         x,y,gtx,gty = map(float, line.split(','))\n         theta = math.pi/2\n         x, y = np.array(\n-            np.sin()\n+            [np.cos(theta), np.sin(theta)],\n+            [-np.sin(theta), np.cos(theta)],\n         )\n         xs.append(x)\n         ys.append(y)\n         gtxs.append(gtx - x_0)\n"
+                },
+                {
+                    "date": 1648582982908,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -7,12 +7,12 @@\n     _, _, x_0, y_0 = map(float, f.readline().split(','))\n     for line in f.readlines():\n         x,y,gtx,gty = map(float, line.split(','))\n         theta = math.pi/2\n-        x, y = np.array(\n+        x, y = np.array([\n             [np.cos(theta), np.sin(theta)],\n             [-np.sin(theta), np.cos(theta)],\n-        )\n+        ]) @ np.array([[x, y]])\n         xs.append(x)\n         ys.append(y)\n         gtxs.append(gtx - x_0)\n         gtys.append(gty - y_0)\n"
+                },
+                {
+                    "date": 1648582991137,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,9 +6,9 @@\n     f.readline()\n     _, _, x_0, y_0 = map(float, f.readline().split(','))\n     for line in f.readlines():\n         x,y,gtx,gty = map(float, line.split(','))\n-        theta = math.pi/2\n+        theta = np.pi/2\n         x, y = np.array([\n             [np.cos(theta), np.sin(theta)],\n             [-np.sin(theta), np.cos(theta)],\n         ]) @ np.array([[x, y]])\n"
+                },
+                {
+                    "date": 1648583001935,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -10,9 +10,9 @@\n         theta = np.pi/2\n         x, y = np.array([\n             [np.cos(theta), np.sin(theta)],\n             [-np.sin(theta), np.cos(theta)],\n-        ]) @ np.array([[x, y]])\n+        ]) @ np.array([x, y])\n         xs.append(x)\n         ys.append(y)\n         gtxs.append(gtx - x_0)\n         gtys.append(gty - y_0)\n"
+                },
+                {
+                    "date": 1648583021189,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,9 +6,9 @@\n     f.readline()\n     _, _, x_0, y_0 = map(float, f.readline().split(','))\n     for line in f.readlines():\n         x,y,gtx,gty = map(float, line.split(','))\n-        theta = np.pi/2\n+        theta = np.pi/3\n         x, y = np.array([\n             [np.cos(theta), np.sin(theta)],\n             [-np.sin(theta), np.cos(theta)],\n         ]) @ np.array([x, y])\n"
+                },
+                {
+                    "date": 1648583075939,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -7,17 +7,17 @@\n     _, _, x_0, y_0 = map(float, f.readline().split(','))\n     for line in f.readlines():\n         x,y,gtx,gty = map(float, line.split(','))\n         theta = np.pi/3\n-        x, y = np.array([\n-            [np.cos(theta), np.sin(theta)],\n-            [-np.sin(theta), np.cos(theta)],\n-        ]) @ np.array([x, y])\n         xs.append(x)\n         ys.append(y)\n         gtxs.append(gtx - x_0)\n         gtys.append(gty - y_0)\n-\n+for i in range(len(xs)):\n+    xs[i], ys[i] = np.array([\n+        [np.cos(theta), np.sin(theta)],\n+        [-np.sin(theta), np.cos(theta)],\n+    ]) @ np.array([x, y])\n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n plt.scatter(xs, ys, color=colors)\n plt.scatter(gtxs, gtys, color=colors)\n plt.show()\n"
+                },
+                {
+                    "date": 1648583084110,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,18 +6,18 @@\n     f.readline()\n     _, _, x_0, y_0 = map(float, f.readline().split(','))\n     for line in f.readlines():\n         x,y,gtx,gty = map(float, line.split(','))\n-        theta = np.pi/3\n         xs.append(x)\n         ys.append(y)\n         gtxs.append(gtx - x_0)\n         gtys.append(gty - y_0)\n+theta = np.pi/3\n for i in range(len(xs)):\n     xs[i], ys[i] = np.array([\n         [np.cos(theta), np.sin(theta)],\n         [-np.sin(theta), np.cos(theta)],\n-    ]) @ np.array([x, y])\n+    ]) @ np.array([xs[i], ys[i]])\n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n plt.scatter(xs, ys, color=colors)\n plt.scatter(gtxs, gtys, color=colors)\n plt.show()\n"
+                },
+                {
+                    "date": 1648583107000,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -11,13 +11,16 @@\n         ys.append(y)\n         gtxs.append(gtx - x_0)\n         gtys.append(gty - y_0)\n theta = np.pi/3\n-for i in range(len(xs)):\n-    xs[i], ys[i] = np.array([\n+def make_R(theta):\n+    return np.array([\n         [np.cos(theta), np.sin(theta)],\n         [-np.sin(theta), np.cos(theta)],\n-    ]) @ np.array([xs[i], ys[i]])\n+    ])\n+for i in range(len(xs)):\n+    R1 = \n+    xs[i], ys[i] =  @ np.array([xs[i], ys[i]])\n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n plt.scatter(xs, ys, color=colors)\n plt.scatter(gtxs, gtys, color=colors)\n plt.show()\n"
+                },
+                {
+                    "date": 1648583117232,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -18,9 +18,9 @@\n         [-np.sin(theta), np.cos(theta)],\n     ])\n for i in range(len(xs)):\n     R1 = \n-    xs[i], ys[i] =  @ np.array([xs[i], ys[i]])\n+    xs[i], ys[i] = make_R(theta) @ np.array([xs[i], ys[i]])\n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n plt.scatter(xs, ys, color=colors)\n plt.scatter(gtxs, gtys, color=colors)\n plt.show()\n"
+                },
+                {
+                    "date": 1648583135794,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -17,10 +17,9 @@\n         [np.cos(theta), np.sin(theta)],\n         [-np.sin(theta), np.cos(theta)],\n     ])\n for i in range(len(xs)):\n-    R1 = \n-    xs[i], ys[i] = make_R(theta) @ np.array([xs[i], ys[i]])\n+    xs[i], ys[i] = make_R(np.tan2(xs[5], ys[5])) @ np.array([xs[i], ys[i]])\n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n plt.scatter(xs, ys, color=colors)\n plt.scatter(gtxs, gtys, color=colors)\n plt.show()\n"
+                },
+                {
+                    "date": 1648583153314,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -18,8 +18,9 @@\n         [-np.sin(theta), np.cos(theta)],\n     ])\n for i in range(len(xs)):\n     xs[i], ys[i] = make_R(np.tan2(xs[5], ys[5])) @ np.array([xs[i], ys[i]])\n+    gtxs[i], gtys[i] = make_R(np.tan2(gtxs[5], gtys[5])) @ np.array([gtxs[i], gtys[i]])\n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n plt.scatter(xs, ys, color=colors)\n plt.scatter(gtxs, gtys, color=colors)\n plt.show()\n"
+                },
+                {
+                    "date": 1648583180233,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,7 +1,8 @@\n import matplotlib.pyplot as plt\n import matplotlib.cm as cm\n import numpy as np\n+import math\n xs, ys, gtxs, gtys = [],[],[],[]\n with open('run1/result.csv') as f:\n     f.readline()\n     _, _, x_0, y_0 = map(float, f.readline().split(','))\n@@ -17,10 +18,10 @@\n         [np.cos(theta), np.sin(theta)],\n         [-np.sin(theta), np.cos(theta)],\n     ])\n for i in range(len(xs)):\n-    xs[i], ys[i] = make_R(np.tan2(xs[5], ys[5])) @ np.array([xs[i], ys[i]])\n-    gtxs[i], gtys[i] = make_R(np.tan2(gtxs[5], gtys[5])) @ np.array([gtxs[i], gtys[i]])\n+    xs[i], ys[i] = make_R(math.tan2(xs[5], ys[5])) @ np.array([xs[i], ys[i]])\n+    gtxs[i], gtys[i] = make_R(math.tan2(gtxs[5], gtys[5])) @ np.array([gtxs[i], gtys[i]])\n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n plt.scatter(xs, ys, color=colors)\n plt.scatter(gtxs, gtys, color=colors)\n plt.show()\n"
+                },
+                {
+                    "date": 1648583209219,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -18,10 +18,10 @@\n         [np.cos(theta), np.sin(theta)],\n         [-np.sin(theta), np.cos(theta)],\n     ])\n for i in range(len(xs)):\n-    xs[i], ys[i] = make_R(math.tan2(xs[5], ys[5])) @ np.array([xs[i], ys[i]])\n-    gtxs[i], gtys[i] = make_R(math.tan2(gtxs[5], gtys[5])) @ np.array([gtxs[i], gtys[i]])\n+    xs[i], ys[i] = make_R(math.atan2(ys[5], xs[5])) @ np.array([xs[i], ys[i]])\n+    gtxs[i], gtys[i] = make_R(math.atan2(gtys[5], gtxs[5])) @ np.array([gtxs[i], gtys[i]])\n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n plt.scatter(xs, ys, color=colors)\n plt.scatter(gtxs, gtys, color=colors)\n plt.show()\n"
+                },
+                {
+                    "date": 1648583218842,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -18,10 +18,10 @@\n         [np.cos(theta), np.sin(theta)],\n         [-np.sin(theta), np.cos(theta)],\n     ])\n for i in range(len(xs)):\n-    xs[i], ys[i] = make_R(math.atan2(ys[5], xs[5])) @ np.array([xs[i], ys[i]])\n-    gtxs[i], gtys[i] = make_R(math.atan2(gtys[5], gtxs[5])) @ np.array([gtxs[i], gtys[i]])\n+    xs[i], ys[i] = make_R(-math.atan2(ys[5], xs[5])) @ np.array([xs[i], ys[i]])\n+    gtxs[i], gtys[i] = make_R(-math.atan2(gtys[5], gtxs[5])) @ np.array([gtxs[i], gtys[i]])\n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n plt.scatter(xs, ys, color=colors)\n plt.scatter(gtxs, gtys, color=colors)\n plt.show()\n"
+                },
+                {
+                    "date": 1648583257999,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -17,11 +17,13 @@\n     return np.array([\n         [np.cos(theta), np.sin(theta)],\n         [-np.sin(theta), np.cos(theta)],\n     ])\n+R1 = make_R(-math.atan2(ys[5], xs[5]))\n+R2 = make_R(-math.atan2(gtys[5], gtxs[5]))\n for i in range(len(xs)):\n-    xs[i], ys[i] = make_R(-math.atan2(ys[5], xs[5])) @ np.array([xs[i], ys[i]])\n-    gtxs[i], gtys[i] = make_R(-math.atan2(gtys[5], gtxs[5])) @ np.array([gtxs[i], gtys[i]])\n+    xs[i], ys[i] = R1 @ np.array([xs[i], ys[i]])\n+    gtxs[i], gtys[i] = R2 @ np.array([gtxs[i], gtys[i]])\n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n plt.scatter(xs, ys, color=colors)\n plt.scatter(gtxs, gtys, color=colors)\n plt.show()\n"
+                },
+                {
+                    "date": 1648583291509,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -17,10 +17,10 @@\n     return np.array([\n         [np.cos(theta), np.sin(theta)],\n         [-np.sin(theta), np.cos(theta)],\n     ])\n-R1 = make_R(-math.atan2(ys[5], xs[5]))\n-R2 = make_R(-math.atan2(gtys[5], gtxs[5]))\n+R1 = make_R(-math.atan2(ys[10], xs[10]))\n+R2 = make_R(-math.atan2(gtys[10], gtxs[10]))\n for i in range(len(xs)):\n     xs[i], ys[i] = R1 @ np.array([xs[i], ys[i]])\n     gtxs[i], gtys[i] = R2 @ np.array([gtxs[i], gtys[i]])\n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n"
+                },
+                {
+                    "date": 1648583359060,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -14,10 +14,10 @@\n         gtys.append(gty - y_0)\n theta = np.pi/3\n def make_R(theta):\n     return np.array([\n-        [np.cos(theta), np.sin(theta)],\n-        [-np.sin(theta), np.cos(theta)],\n+        [np.cos(theta), -np.sin(theta)],\n+        [np.sin(theta), np.cos(theta)],\n     ])\n R1 = make_R(-math.atan2(ys[10], xs[10]))\n R2 = make_R(-math.atan2(gtys[10], gtxs[10]))\n for i in range(len(xs)):\n"
+                },
+                {
+                    "date": 1648583399061,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -17,10 +17,14 @@\n     return np.array([\n         [np.cos(theta), -np.sin(theta)],\n         [np.sin(theta), np.cos(theta)],\n     ])\n-R1 = make_R(-math.atan2(ys[10], xs[10]))\n-R2 = make_R(-math.atan2(gtys[10], gtxs[10]))\n+theta1 = math.atan2(ys[10], xs[10])\n+theta2 = math.atan2(gtys[10], gtxs[10])\n+print(theta1)\n+print(theta2)\n+R1 = make_R(0)\n+R2 = make_R(0)\n for i in range(len(xs)):\n     xs[i], ys[i] = R1 @ np.array([xs[i], ys[i]])\n     gtxs[i], gtys[i] = R2 @ np.array([gtxs[i], gtys[i]])\n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n"
+                },
+                {
+                    "date": 1648583433442,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -17,10 +17,10 @@\n     return np.array([\n         [np.cos(theta), -np.sin(theta)],\n         [np.sin(theta), np.cos(theta)],\n     ])\n-theta1 = math.atan2(ys[10], xs[10])\n-theta2 = math.atan2(gtys[10], gtxs[10])\n+theta1 = math.atan2(ys[20], xs[20])\n+theta2 = math.atan2(gtys[20], gtxs[20])\n print(theta1)\n print(theta2)\n R1 = make_R(0)\n R2 = make_R(0)\n"
+                },
+                {
+                    "date": 1648583488016,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -17,14 +17,15 @@\n     return np.array([\n         [np.cos(theta), -np.sin(theta)],\n         [np.sin(theta), np.cos(theta)],\n     ])\n-theta1 = math.atan2(ys[20], xs[20])\n-theta2 = math.atan2(gtys[20], gtxs[20])\n+mp = 64\n+theta1 = math.atan2(ys[mp], xs[mp])\n+theta2 = math.atan2(gtys[mp], gtxs[mp])\n print(theta1)\n print(theta2)\n-R1 = make_R(0)\n-R2 = make_R(0)\n+R1 = make_R(theta1)\n+R2 = make_R(theta2)\n for i in range(len(xs)):\n     xs[i], ys[i] = R1 @ np.array([xs[i], ys[i]])\n     gtxs[i], gtys[i] = R2 @ np.array([gtxs[i], gtys[i]])\n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n"
+                },
+                {
+                    "date": 1648583495919,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -22,10 +22,10 @@\n theta1 = math.atan2(ys[mp], xs[mp])\n theta2 = math.atan2(gtys[mp], gtxs[mp])\n print(theta1)\n print(theta2)\n-R1 = make_R(theta1)\n-R2 = make_R(theta2)\n+R1 = make_R(-theta1)\n+R2 = make_R(-theta2)\n for i in range(len(xs)):\n     xs[i], ys[i] = R1 @ np.array([xs[i], ys[i]])\n     gtxs[i], gtys[i] = R2 @ np.array([gtxs[i], gtys[i]])\n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n"
+                },
+                {
+                    "date": 1648583537735,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -17,9 +17,9 @@\n     return np.array([\n         [np.cos(theta), -np.sin(theta)],\n         [np.sin(theta), np.cos(theta)],\n     ])\n-mp = 64\n+mp = len(xs)//2\n theta1 = math.atan2(ys[mp], xs[mp])\n theta2 = math.atan2(gtys[mp], gtxs[mp])\n print(theta1)\n print(theta2)\n"
+                },
+                {
+                    "date": 1648583572140,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -22,10 +22,10 @@\n theta1 = math.atan2(ys[mp], xs[mp])\n theta2 = math.atan2(gtys[mp], gtxs[mp])\n print(theta1)\n print(theta2)\n-R1 = make_R(-theta1)\n-R2 = make_R(-theta2)\n+R1 = make_R(0)#-theta1)\n+R2 = make_R(0#-theta2)\n for i in range(len(xs)):\n     xs[i], ys[i] = R1 @ np.array([xs[i], ys[i]])\n     gtxs[i], gtys[i] = R2 @ np.array([gtxs[i], gtys[i]])\n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n"
+                },
+                {
+                    "date": 1648583578053,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -23,9 +23,9 @@\n theta2 = math.atan2(gtys[mp], gtxs[mp])\n print(theta1)\n print(theta2)\n R1 = make_R(0)#-theta1)\n-R2 = make_R(0#-theta2)\n+R2 = make_R(0)#-theta2)\n for i in range(len(xs)):\n     xs[i], ys[i] = R1 @ np.array([xs[i], ys[i]])\n     gtxs[i], gtys[i] = R2 @ np.array([gtxs[i], gtys[i]])\n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n"
+                },
+                {
+                    "date": 1648583628701,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -22,10 +22,10 @@\n theta1 = math.atan2(ys[mp], xs[mp])\n theta2 = math.atan2(gtys[mp], gtxs[mp])\n print(theta1)\n print(theta2)\n-R1 = make_R(0)#-theta1)\n-R2 = make_R(0)#-theta2)\n+R1 = make_R(0-theta1)\n+R2 = make_R(0-theta2)\n for i in range(len(xs)):\n     xs[i], ys[i] = R1 @ np.array([xs[i], ys[i]])\n     gtxs[i], gtys[i] = R2 @ np.array([gtxs[i], gtys[i]])\n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n"
+                },
+                {
+                    "date": 1648583726846,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -11,9 +11,8 @@\n         xs.append(x)\n         ys.append(y)\n         gtxs.append(gtx - x_0)\n         gtys.append(gty - y_0)\n-theta = np.pi/3\n def make_R(theta):\n     return np.array([\n         [np.cos(theta), -np.sin(theta)],\n         [np.sin(theta), np.cos(theta)],\n"
+                },
+                {
+                    "date": 1648583749391,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -26,8 +26,11 @@\n R2 = make_R(0-theta2)\n for i in range(len(xs)):\n     xs[i], ys[i] = R1 @ np.array([xs[i], ys[i]])\n     gtxs[i], gtys[i] = R2 @ np.array([gtxs[i], gtys[i]])\n+    if i == mp:\n+        print(xs[i], ys[i])\n+        print(gtxs[i], gtys[i])\n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n plt.scatter(xs, ys, color=colors)\n plt.scatter(gtxs, gtys, color=colors)\n plt.show()\n"
+                },
+                {
+                    "date": 1648583802322,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -21,10 +21,10 @@\n theta1 = math.atan2(ys[mp], xs[mp])\n theta2 = math.atan2(gtys[mp], gtxs[mp])\n print(theta1)\n print(theta2)\n-R1 = make_R(0-theta1)\n-R2 = make_R(0-theta2)\n+R1 = make_R(0)#-theta1)\n+R2 = make_R(0)#-theta2)\n for i in range(len(xs)):\n     xs[i], ys[i] = R1 @ np.array([xs[i], ys[i]])\n     gtxs[i], gtys[i] = R2 @ np.array([gtxs[i], gtys[i]])\n     if i == mp:\n"
+                },
+                {
+                    "date": 1648583812360,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -21,17 +21,17 @@\n theta1 = math.atan2(ys[mp], xs[mp])\n theta2 = math.atan2(gtys[mp], gtxs[mp])\n print(theta1)\n print(theta2)\n-R1 = make_R(0)#-theta1)\n-R2 = make_R(0)#-theta2)\n+R1 = make_R(0-theta1)\n+R2 = make_R(0-theta2)\n for i in range(len(xs)):\n     xs[i], ys[i] = R1 @ np.array([xs[i], ys[i]])\n     gtxs[i], gtys[i] = R2 @ np.array([gtxs[i], gtys[i]])\n     if i == mp:\n         print(xs[i], ys[i])\n         print(gtxs[i], gtys[i])\n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n-plt.scatter(xs, ys, color=colors)\n-plt.scatter(gtxs, gtys, color=colors)\n+plt.scatter(xs, ys, color='r')\n+plt.scatter(gtxs, gtys, color='b')\n plt.show()\n \n"
+                },
+                {
+                    "date": 1648583831522,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -12,12 +12,13 @@\n         ys.append(y)\n         gtxs.append(gtx - x_0)\n         gtys.append(gty - y_0)\n def make_R(theta):\n-    return np.array([\n-        [np.cos(theta), -np.sin(theta)],\n-        [np.sin(theta), np.cos(theta)],\n-    ])\n+    return np.eye(2)\n+    # return np.array([\n+    #     [np.cos(theta), -np.sin(theta)],\n+    #     [np.sin(theta), np.cos(theta)],\n+    # ])\n mp = len(xs)//2\n theta1 = math.atan2(ys[mp], xs[mp])\n theta2 = math.atan2(gtys[mp], gtxs[mp])\n print(theta1)\n"
+                },
+                {
+                    "date": 1648583882632,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -13,12 +13,12 @@\n         gtxs.append(gtx - x_0)\n         gtys.append(gty - y_0)\n def make_R(theta):\n     return np.eye(2)\n-    # return np.array([\n-    #     [np.cos(theta), -np.sin(theta)],\n-    #     [np.sin(theta), np.cos(theta)],\n-    # ])\n+    return np.array([\n+        [np.cos(theta), -np.sin(theta)],\n+        [np.sin(theta), np.cos(theta)],\n+    ])\n mp = len(xs)//2\n theta1 = math.atan2(ys[mp], xs[mp])\n theta2 = math.atan2(gtys[mp], gtxs[mp])\n print(theta1)\n"
+                },
+                {
+                    "date": 1648583928204,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -12,9 +12,9 @@\n         ys.append(y)\n         gtxs.append(gtx - x_0)\n         gtys.append(gty - y_0)\n def make_R(theta):\n-    return np.eye(2)\n+    # return np.eye(2)\n     return np.array([\n         [np.cos(theta), -np.sin(theta)],\n         [np.sin(theta), np.cos(theta)],\n     ])\n@@ -22,10 +22,10 @@\n theta1 = math.atan2(ys[mp], xs[mp])\n theta2 = math.atan2(gtys[mp], gtxs[mp])\n print(theta1)\n print(theta2)\n-R1 = make_R(0-theta1)\n-R2 = make_R(0-theta2)\n+R1 = make_R(theta1)\n+R2 = make_R(theta2)\n for i in range(len(xs)):\n     xs[i], ys[i] = R1 @ np.array([xs[i], ys[i]])\n     gtxs[i], gtys[i] = R2 @ np.array([gtxs[i], gtys[i]])\n     if i == mp:\n"
+                },
+                {
+                    "date": 1648583941215,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -31,8 +31,8 @@\n     if i == mp:\n         print(xs[i], ys[i])\n         print(gtxs[i], gtys[i])\n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n-plt.scatter(xs, ys, color='r')\n-plt.scatter(gtxs, gtys, color='b')\n+plt.plot(xs, ys, color='r')\n+plt.plot(gtxs, gtys, color='b')\n plt.show()\n \n"
+                },
+                {
+                    "date": 1648584126793,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -22,17 +22,17 @@\n theta1 = math.atan2(ys[mp], xs[mp])\n theta2 = math.atan2(gtys[mp], gtxs[mp])\n print(theta1)\n print(theta2)\n-R1 = make_R(theta1)\n-R2 = make_R(theta2)\n+R1 = make_R(-theta1)\n+R2 = make_R(-theta2)\n for i in range(len(xs)):\n     xs[i], ys[i] = R1 @ np.array([xs[i], ys[i]])\n     gtxs[i], gtys[i] = R2 @ np.array([gtxs[i], gtys[i]])\n     if i == mp:\n         print(xs[i], ys[i])\n         print(gtxs[i], gtys[i])\n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n-plt.plot(xs, ys, color='r')\n-plt.plot(gtxs, gtys, color='b')\n+plt.scatter(xs, ys, color='r')\n+plt.scatter(gtxs, gtys, color='b')\n plt.show()\n \n"
+                },
+                {
+                    "date": 1648584194624,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -33,6 +33,8 @@\n         print(gtxs[i], gtys[i])\n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n plt.scatter(xs, ys, color='r')\n plt.scatter(gtxs, gtys, color='b')\n+plt.xlim(-4,4)\n+plt.ylim(-1,1)\n plt.show()\n \n"
+                },
+                {
+                    "date": 1648584209524,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -20,10 +20,10 @@\n     ])\n mp = len(xs)//2\n theta1 = math.atan2(ys[mp], xs[mp])\n theta2 = math.atan2(gtys[mp], gtxs[mp])\n-print(theta1)\n-print(theta2)\n+# print(theta1)\n+# print(theta2)\n R1 = make_R(-theta1)\n R2 = make_R(-theta2)\n for i in range(len(xs)):\n     xs[i], ys[i] = R1 @ np.array([xs[i], ys[i]])\n"
+                },
+                {
+                    "date": 1648584218710,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -20,10 +20,10 @@\n     ])\n mp = len(xs)//2\n theta1 = math.atan2(ys[mp], xs[mp])\n theta2 = math.atan2(gtys[mp], gtxs[mp])\n-# print(theta1)\n-# print(theta2)\n+print(theta1)\n+print(theta2)\n R1 = make_R(-theta1)\n R2 = make_R(-theta2)\n for i in range(len(xs)):\n     xs[i], ys[i] = R1 @ np.array([xs[i], ys[i]])\n"
+                },
+                {
+                    "date": 1648584224007,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -12,9 +12,9 @@\n         ys.append(y)\n         gtxs.append(gtx - x_0)\n         gtys.append(gty - y_0)\n def make_R(theta):\n-    # return np.eye(2)\n+    return np.eye(2)\n     return np.array([\n         [np.cos(theta), -np.sin(theta)],\n         [np.sin(theta), np.cos(theta)],\n     ])\n"
+                },
+                {
+                    "date": 1648584433981,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -12,9 +12,9 @@\n         ys.append(y)\n         gtxs.append(gtx - x_0)\n         gtys.append(gty - y_0)\n def make_R(theta):\n-    return np.eye(2)\n+    # return np.eye(2)\n     return np.array([\n         [np.cos(theta), -np.sin(theta)],\n         [np.sin(theta), np.cos(theta)],\n     ])\n"
+                },
+                {
+                    "date": 1648584472686,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -33,8 +33,8 @@\n         print(gtxs[i], gtys[i])\n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n plt.scatter(xs, ys, color='r')\n plt.scatter(gtxs, gtys, color='b')\n-plt.xlim(-4,4)\n-plt.ylim(-1,1)\n+plt.xlim(0,4)\n+plt.ylim(-.5,.5)\n plt.show()\n \n"
+                },
+                {
+                    "date": 1648584478521,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -33,8 +33,8 @@\n         print(gtxs[i], gtys[i])\n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n plt.scatter(xs, ys, color='r')\n plt.scatter(gtxs, gtys, color='b')\n-plt.xlim(0,4)\n+plt.xlim(-.5,4)\n plt.ylim(-.5,.5)\n plt.show()\n \n"
+                },
+                {
+                    "date": 1648584495113,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -33,8 +33,8 @@\n         print(gtxs[i], gtys[i])\n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n plt.scatter(xs, ys, color='r')\n plt.scatter(gtxs, gtys, color='b')\n-plt.xlim(-.5,4)\n-plt.ylim(-.5,.5)\n+plt.xlim(-.5,4.5)\n+plt.ylim(-.3,.3)\n plt.show()\n \n"
+                },
+                {
+                    "date": 1648584532757,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -20,10 +20,9 @@\n     ])\n mp = len(xs)//2\n theta1 = math.atan2(ys[mp], xs[mp])\n theta2 = math.atan2(gtys[mp], gtxs[mp])\n-print(theta1)\n-print(theta2)\n+print(f\"Adjusting angle by {theta1-theta2}\")\n R1 = make_R(-theta1)\n R2 = make_R(-theta2)\n for i in range(len(xs)):\n     xs[i], ys[i] = R1 @ np.array([xs[i], ys[i]])\n"
+                },
+                {
+                    "date": 1648584539474,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -26,11 +26,8 @@\n R2 = make_R(-theta2)\n for i in range(len(xs)):\n     xs[i], ys[i] = R1 @ np.array([xs[i], ys[i]])\n     gtxs[i], gtys[i] = R2 @ np.array([gtxs[i], gtys[i]])\n-    if i == mp:\n-        print(xs[i], ys[i])\n-        print(gtxs[i], gtys[i])\n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n plt.scatter(xs, ys, color='r')\n plt.scatter(gtxs, gtys, color='b')\n plt.xlim(-.5,4.5)\n"
+                },
+                {
+                    "date": 1648604817523,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -27,9 +27,9 @@\n for i in range(len(xs)):\n     xs[i], ys[i] = R1 @ np.array([xs[i], ys[i]])\n     gtxs[i], gtys[i] = R2 @ np.array([gtxs[i], gtys[i]])\n colors = cm.rainbow(np.linspace(0, 1, len(ys)))\n-plt.scatter(xs, ys, color='r')\n+plt.scatter(xs, ys, color=color)\n plt.scatter(gtxs, gtys, color='b')\n plt.xlim(-.5,4.5)\n plt.ylim(-.3,.3)\n plt.show()\n"
+                }
+            ],
+            "date": 1648577246911,
+            "name": "Commit-0",
+            "content": "with open('run1/result.csv') as f:\n    \ndef "
+        }
+    ]
+}

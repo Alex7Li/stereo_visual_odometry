@@ -1,0 +1,122 @@
+{
+    "sourceFile": "Makefile",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 26,
+            "patches": [
+                {
+                    "date": 1647638530132,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1647638556314,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -2,5 +2,5 @@\n PROJECT = new_output\n SRC = new.cpp\n LIBS = `pkg-config --cflags --libs opencv4`\n $(PROJECT) : $(SRC)\n-      $(CC) $(SRC) -o $(PROJECT) $(LIBS)\n\\ No newline at end of file\n+\t$(CC) $(SRC) -o $(PROJECT) $(LIBS)\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1647639035611,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,6 +1,6 @@\n CC = g++\n PROJECT = new_output\n-SRC = new.cpp\n+SRC = src/main.cpp\n LIBS = `pkg-config --cflags --libs opencv4`\n $(PROJECT) : $(SRC)\n \t$(CC) $(SRC) -o $(PROJECT) $(LIBS)\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1647639639195,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,6 +1,6 @@\n CC = g++\n-PROJECT = new_output\n+PROJECT = vo\n SRC = src/main.cpp\n LIBS = `pkg-config --cflags --libs opencv4`\n $(PROJECT) : $(SRC)\n \t$(CC) $(SRC) -o $(PROJECT) $(LIBS)\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1647639693677,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,6 +1,6 @@\n CC = g++\n PROJECT = vo\n-SRC = src/main.cpp\n+SRC = src/main.cpp include/vo.h\n LIBS = `pkg-config --cflags --libs opencv4`\n $(PROJECT) : $(SRC)\n \t$(CC) $(SRC) -o $(PROJECT) $(LIBS)\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1647639717434,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,6 +1,6 @@\n CC = g++\n PROJECT = vo\n-SRC = src/main.cpp include/vo.h\n+SRC = src/main.cpp src/vo.cpp src/feature_set.cpp include/vo.h\n LIBS = `pkg-config --cflags --libs opencv4`\n $(PROJECT) : $(SRC)\n \t$(CC) $(SRC) -o $(PROJECT) $(LIBS)\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1647639821045,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,6 +1,6 @@\n CC = g++\n PROJECT = vo\n SRC = src/main.cpp src/vo.cpp src/feature_set.cpp include/vo.h\n LIBS = `pkg-config --cflags --libs opencv4`\n-$(PROJECT) : $(SRC)\n+$(PROJECT) : $(SRC) -Iinclude\n \t$(CC) $(SRC) -o $(PROJECT) $(LIBS)\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1647639826974,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,6 +1,6 @@\n CC = g++\n PROJECT = vo\n SRC = src/main.cpp src/vo.cpp src/feature_set.cpp include/vo.h\n LIBS = `pkg-config --cflags --libs opencv4`\n-$(PROJECT) : $(SRC) -Iinclude\n+$(PROJECT) : $(SRC) -Iinclude -Wall\n \t$(CC) $(SRC) -o $(PROJECT) $(LIBS)\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1647639857360,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,6 +1,7 @@\n CC = g++\n PROJECT = vo\n SRC = src/main.cpp src/vo.cpp src/feature_set.cpp include/vo.h\n LIBS = `pkg-config --cflags --libs opencv4`\n-$(PROJECT) : $(SRC) -Iinclude -Wall\n+CFLAGS = -Iinclude/ -Wall\n+$(PROJECT) : $(SRC) \n \t$(CC) $(SRC) -o $(PROJECT) $(LIBS)\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1647639912736,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -2,6 +2,6 @@\n PROJECT = vo\n SRC = src/main.cpp src/vo.cpp src/feature_set.cpp include/vo.h\n LIBS = `pkg-config --cflags --libs opencv4`\n CFLAGS = -Iinclude/ -Wall\n-$(PROJECT) : $(SRC) \n-\t$(CC) $(SRC) -o $(PROJECT) $(LIBS)\n\\ No newline at end of file\n+$(PROJECT) : $(SRC)\n+\t$(CC) $(CFLAGS) -o $(PROJECT) $(LIBS)\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1647639920148,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -3,5 +3,6 @@\n SRC = src/main.cpp src/vo.cpp src/feature_set.cpp include/vo.h\n LIBS = `pkg-config --cflags --libs opencv4`\n CFLAGS = -Iinclude/ -Wall\n $(PROJECT) : $(SRC)\n-\t$(CC) $(CFLAGS) -o $(PROJECT) $(LIBS)\n\\ No newline at end of file\n+\t$(CC) $(CFLAGS) -o $(PROJECT) $(LIBS)\n+  \n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1647639956933,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,8 +1,7 @@\n CC = g++\n PROJECT = vo\n SRC = src/main.cpp src/vo.cpp src/feature_set.cpp include/vo.h\n-LIBS = `pkg-config --cflags --libs opencv4`\n-CFLAGS = -Iinclude/ -Wall\n+LIBS = `pkg-config --cflags --libs opencv`\n+CFLAGS = -Iinclude -Wall\n $(PROJECT) : $(SRC)\n\\ No newline at end of file\n \t$(CC) $(CFLAGS) -o $(PROJECT) $(LIBS)\n-  \n"
+                },
+                {
+                    "date": 1647640044018,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,7 +1,7 @@\n CC = g++\n PROJECT = vo\n SRC = src/main.cpp src/vo.cpp src/feature_set.cpp include/vo.h\n-LIBS = `pkg-config --cflags --libs opencv`\n+LIBS = `pkg-config --cflags --libs opencv4`\n CFLAGS = -Iinclude -Wall\n $(PROJECT) : $(SRC)\n\\ No newline at end of file\n-\t$(CC) $(CFLAGS) -o $(PROJECT) $(LIBS)\n+\t$(CC) $(CFLAGS) -o $(PROJECT) $(LIBS)\n"
+                },
+                {
+                    "date": 1647640389050,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,7 +1,8 @@\n CC = g++\n PROJECT = vo\n SRC = src/main.cpp src/vo.cpp src/feature_set.cpp include/vo.h\n-LIBS = `pkg-config --cflags --libs opencv4`\n+LIBS = -lopencv_core -lopencv_imgproc -lopencv_highgui `pkg-config --cflags --libs opencv4`\n CFLAGS = -Iinclude -Wall\n $(PROJECT) : $(SRC)\n\\ No newline at end of file\n-\t$(CC) $(CFLAGS) -o $(PROJECT) $(LIBS)\n+\t$(CC) $(CFLAGS) -o $(PROJECT) $(LIBS)\n+g++ src/main.cpp include/vo.h  -o vo `pkg-config --cflags --libs opencv4`\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1647640465263,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -3,6 +3,5 @@\n SRC = src/main.cpp src/vo.cpp src/feature_set.cpp include/vo.h\n LIBS = -lopencv_core -lopencv_imgproc -lopencv_highgui `pkg-config --cflags --libs opencv4`\n CFLAGS = -Iinclude -Wall\n $(PROJECT) : $(SRC)\n-\t$(CC) $(CFLAGS) -o $(PROJECT) $(LIBS)\n-g++ src/main.cpp include/vo.h  -o vo `pkg-config --cflags --libs opencv4`\n\\ No newline at end of file\n+\t$(CC) $(SRC) $(CFLAGS) -o $(PROJECT) $(LIBS)\n"
+                },
+                {
+                    "date": 1647642175462,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,7 +1,7 @@\n CC = g++\n PROJECT = vo\n SRC = src/main.cpp src/vo.cpp src/feature_set.cpp include/vo.h\n-LIBS = -lopencv_core -lopencv_imgproc -lopencv_highgui `pkg-config --cflags --libs opencv4`\n+LIBS = -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_features2d `pkg-config --cflags --libs opencv4`\n CFLAGS = -Iinclude -Wall\n $(PROJECT) : $(SRC)\n \t$(CC) $(SRC) $(CFLAGS) -o $(PROJECT) $(LIBS)\n"
+                },
+                {
+                    "date": 1647658660688,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,7 +1,7 @@\n CC = g++\n PROJECT = vo\n SRC = src/main.cpp src/vo.cpp src/feature_set.cpp include/vo.h\n LIBS = -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_features2d `pkg-config --cflags --libs opencv4`\n-CFLAGS = -Iinclude -Wall\n+CFLAGS = -Iinclude -Wall -g\n $(PROJECT) : $(SRC)\n \t$(CC) $(SRC) $(CFLAGS) -o $(PROJECT) $(LIBS)\n"
+                },
+                {
+                    "date": 1647658849880,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,7 +1,7 @@\n CC = g++\n PROJECT = vo\n SRC = src/main.cpp src/vo.cpp src/feature_set.cpp include/vo.h\n LIBS = -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_features2d `pkg-config --cflags --libs opencv4`\n-CFLAGS = -Iinclude -Wall -g\n+CFLAGS = -Iinclude -Wall\n $(PROJECT) : $(SRC)\n-\t$(CC) $(SRC) $(CFLAGS) -o $(PROJECT) $(LIBS)\n+\t$(CC) $(SRC) -g $(CFLAGS) -o $(PROJECT) $(LIBS)\n"
+                },
+                {
+                    "date": 1648588100560,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,7 +1,7 @@\n CC = g++\n PROJECT = vo\n SRC = src/main.cpp src/vo.cpp src/feature_set.cpp include/vo.h\n-LIBS = -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_features2d `pkg-config --cflags --libs opencv4`\n+LIBS = -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_features2d `pkg-config --cflags --libs opencv4` --D_GLIBCXX_DEBUG\n CFLAGS = -Iinclude -Wall\n $(PROJECT) : $(SRC)\n \t$(CC) $(SRC) -g $(CFLAGS) -o $(PROJECT) $(LIBS)\n"
+                },
+                {
+                    "date": 1648588128157,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,7 +1,7 @@\n CC = g++\n PROJECT = vo\n SRC = src/main.cpp src/vo.cpp src/feature_set.cpp include/vo.h\n-LIBS = -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_features2d `pkg-config --cflags --libs opencv4` --D_GLIBCXX_DEBUG\n+LIBS = -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_features2d `pkg-config --cflags --libs opencv4` -D_GLIBCXX_DEBUG\n CFLAGS = -Iinclude -Wall\n $(PROJECT) : $(SRC)\n \t$(CC) $(SRC) -g $(CFLAGS) -o $(PROJECT) $(LIBS)\n"
+                },
+                {
+                    "date": 1648588160881,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,7 +1,7 @@\n CC = g++\n PROJECT = vo\n SRC = src/main.cpp src/vo.cpp src/feature_set.cpp include/vo.h\n-LIBS = -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_features2d `pkg-config --cflags --libs opencv4` -D_GLIBCXX_DEBUG\n+LIBS = -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_features2d `pkg-config --cflags --libs opencv4`\n CFLAGS = -Iinclude -Wall\n $(PROJECT) : $(SRC)\n \t$(CC) $(SRC) -g $(CFLAGS) -o $(PROJECT) $(LIBS)\n"
+                },
+                {
+                    "date": 1648588167348,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,7 +1,7 @@\n CC = g++\n PROJECT = vo\n SRC = src/main.cpp src/vo.cpp src/feature_set.cpp include/vo.h\n LIBS = -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_features2d `pkg-config --cflags --libs opencv4`\n-CFLAGS = -Iinclude -Wall\n+CFLAGS = -Iinclude -Wall --D_GLIBCXX_DEBUG\n $(PROJECT) : $(SRC)\n \t$(CC) $(SRC) -g $(CFLAGS) -o $(PROJECT) $(LIBS)\n"
+                },
+                {
+                    "date": 1648588173822,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,7 +1,7 @@\n CC = g++\n PROJECT = vo\n SRC = src/main.cpp src/vo.cpp src/feature_set.cpp include/vo.h\n LIBS = -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_features2d `pkg-config --cflags --libs opencv4`\n-CFLAGS = -Iinclude -Wall --D_GLIBCXX_DEBUG\n+CFLAGS = -Iinclude -Wall -D_GLIBCXX_DEBUG\n $(PROJECT) : $(SRC)\n \t$(CC) $(SRC) -g $(CFLAGS) -o $(PROJECT) $(LIBS)\n"
+                },
+                {
+                    "date": 1648588193271,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,7 +1,7 @@\n CC = g++\n PROJECT = vo\n SRC = src/main.cpp src/vo.cpp src/feature_set.cpp include/vo.h\n LIBS = -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_features2d `pkg-config --cflags --libs opencv4`\n-CFLAGS = -Iinclude -Wall -D_GLIBCXX_DEBUG\n+CFLAGS = -Iinclude -Wall\n $(PROJECT) : $(SRC)\n \t$(CC) $(SRC) -g $(CFLAGS) -o $(PROJECT) $(LIBS)\n"
+                },
+                {
+                    "date": 1648602785830,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,7 +1,7 @@\n CC = g++\n PROJECT = vo\n-SRC = src/main.cpp src/vo.cpp src/feature_set.cpp include/vo.h\n+SRC = src/main.cpp src/vo.cpp src/feature.cpp src/matrix.cpp src/bucket.cpp src/utils.cpp include/vo.h\n LIBS = -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_features2d `pkg-config --cflags --libs opencv4`\n CFLAGS = -Iinclude -Wall\n $(PROJECT) : $(SRC)\n \t$(CC) $(SRC) -g $(CFLAGS) -o $(PROJECT) $(LIBS)\n"
+                },
+                {
+                    "date": 1648602824583,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,7 +1,7 @@\n CC = g++\n PROJECT = vo\n-SRC = src/main.cpp src/vo.cpp src/feature.cpp src/matrix.cpp src/bucket.cpp src/utils.cpp include/vo.h\n+SRC = src/main.cpp src/vo.cpp src/feature.cpp src/matrix.cpp src/bucket.cpp src/utils.cpp include/vo.h include/bucket.h include/feature.h include/matrix.h include/pose_estimation_node.h include/utils.h include/vo.h\n LIBS = -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_features2d `pkg-config --cflags --libs opencv4`\n CFLAGS = -Iinclude -Wall\n $(PROJECT) : $(SRC)\n \t$(CC) $(SRC) -g $(CFLAGS) -o $(PROJECT) $(LIBS)\n"
+                },
+                {
+                    "date": 1648603520457,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,7 +1,7 @@\n CC = g++\n PROJECT = vo\n-SRC = src/main.cpp src/vo.cpp src/feature.cpp src/matrix.cpp src/bucket.cpp src/utils.cpp include/vo.h include/bucket.h include/feature.h include/matrix.h include/pose_estimation_node.h include/utils.h include/vo.h\n+SRC = src/main.cpp src/pose_estimation_node.cpp src/vo.cpp src/feature.cpp src/matrix.cpp src/bucket.cpp src/utils.cpp include/vo.h include/bucket.h include/feature.h include/matrix.h include/pose_estimation_node.h include/utils.h\n LIBS = -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_features2d `pkg-config --cflags --libs opencv4`\n CFLAGS = -Iinclude -Wall\n $(PROJECT) : $(SRC)\n \t$(CC) $(SRC) -g $(CFLAGS) -o $(PROJECT) $(LIBS)\n"
+                }
+            ],
+            "date": 1647638530132,
+            "name": "Commit-0",
+            "content": "CC = g++\nPROJECT = new_output\nSRC = new.cpp\nLIBS = `pkg-config --cflags --libs opencv4`\n$(PROJECT) : $(SRC)\n      $(CC) $(SRC) -o $(PROJECT) $(LIBS)"
+        }
+    ]
+}

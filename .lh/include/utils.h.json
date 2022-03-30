@@ -1,0 +1,34 @@
+{
+    "sourceFile": "include/utils.h",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 4,
+            "patches": [
+                {
+                    "date": 1648602840899,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1648602852214,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -33,9 +33,9 @@\n \n // --------------------------------\n // Transformation\n // --------------------------------\n-void cv_rotm_to_eigen_quat(Eigen::Quaternion<double> & q, const cv::Mat & R);\n+// void cv_rotm_to_eigen_quat(Eigen::Quaternion<double> & q, const cv::Mat & R);\n \n void integrateOdometryStereo(int frame_id, cv::Mat& frame_pose, const cv::Mat& rotation, \n                             const cv::Mat& translation_stereo);\n \n"
+                },
+                {
+                    "date": 1648603719891,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -50,10 +50,5 @@\n void loadImageLeft(cv::Mat& image_color, cv::Mat& image_gary, int frame_id, std::string filepath);\n \n void loadImageRight(cv::Mat& image_color, cv::Mat& image_gary, int frame_id, std::string filepath);\n \n-void debug(const std::string & s)\n-{\n-\tif (false) std::cout << s << std::endl;\n-}\n-\n #endif\n"
+                },
+                {
+                    "date": 1648603728628,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -50,5 +50,10 @@\n void loadImageLeft(cv::Mat& image_color, cv::Mat& image_gary, int frame_id, std::string filepath);\n \n void loadImageRight(cv::Mat& image_color, cv::Mat& image_gary, int frame_id, std::string filepath);\n \n+void debug(const std::string & s)\n+{\n+\tif (false) std::cout << s << std::endl;\n+}\n+\n #endif\n"
+                },
+                {
+                    "date": 1648603733865,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -50,10 +50,5 @@\n void loadImageLeft(cv::Mat& image_color, cv::Mat& image_gary, int frame_id, std::string filepath);\n \n void loadImageRight(cv::Mat& image_color, cv::Mat& image_gary, int frame_id, std::string filepath);\n \n-void debug(const std::string & s)\n-{\n-\tif (false) std::cout << s << std::endl;\n-}\n-\n #endif\n"
+                }
+            ],
+            "date": 1648602840899,
+            "name": "Commit-0",
+            "content": "#ifndef UTILS_H\n#define UTILS_H\n\n#include \"opencv2/video/tracking.hpp\"\n#include \"opencv2/imgproc/imgproc.hpp\"\n#include \"opencv2/highgui/highgui.hpp\"\n#include \"opencv2/features2d/features2d.hpp\"\n#include \"opencv2/calib3d/calib3d.hpp\"\n\n#include <iostream>\n#include <ctype.h>\n#include <algorithm>\n#include <iterator>\n#include <vector>\n#include <ctime>\n#include <sstream>\n#include <fstream>\n#include <string>\n\n#include \"feature.h\"\n#include \"matrix.h\"\n\n// #include <eigen3/Eigen/Dense>\n// #include <eigen3/Eigen/Core>\n// #include <eigen3/Eigen/Geometry> \n\n// --------------------------------\n// Visualization\n// --------------------------------\nvoid drawFeaturePoints(cv::Mat image, std::vector<cv::Point2f>& points);\n\nvoid display(int frame_id, cv::Mat& trajectory, cv::Mat& pose, std::vector<Matrix>& pose_matrix_gt, float fps, bool showgt);\n\n// --------------------------------\n// Transformation\n// --------------------------------\nvoid cv_rotm_to_eigen_quat(Eigen::Quaternion<double> & q, const cv::Mat & R);\n\nvoid integrateOdometryStereo(int frame_id, cv::Mat& frame_pose, const cv::Mat& rotation, \n                            const cv::Mat& translation_stereo);\n\nbool isRotationMatrix(cv::Mat &R);\n\ncv::Vec3f rotationMatrixToEulerAngles(cv::Mat &R);\n\n// --------------------------------\n// I/O\n// --------------------------------\n\nvoid loadImageLeft(cv::Mat& image_color, cv::Mat& image_gary, int frame_id, std::string filepath);\n\nvoid loadImageRight(cv::Mat& image_color, cv::Mat& image_gary, int frame_id, std::string filepath);\n\nvoid debug(const std::string & s)\n{\n\tif (false) std::cout << s << std::endl;\n}\n\n#endif\n"
+        }
+    ]
+}

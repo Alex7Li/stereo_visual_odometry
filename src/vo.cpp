@@ -64,7 +64,7 @@ void matchingFeatures(cv::Mat& imageLeft_t0, cv::Mat& imageRight_t0,
     {
         // append new features with old features
         appendNewFeatures(imageLeft_t0, currentVOFeatures);   
-        debug("[vo]: current feature set size: " + std::to_string(currentVOFeatures.points.size()));
+        // debug("[vo]: current feature set size: " + std::to_string(currentVOFeatures.points.size()));
     }
     // left image points are the tracked features
     pointsLeft_t0 = currentVOFeatures.points;
@@ -91,7 +91,7 @@ void matchingFeatures(cv::Mat& imageLeft_t0, cv::Mat& imageRight_t0,
     checkValidMatch(pointsLeft_t0, pointsLeftReturn_t0, status, 1);
     removeInvalidPoints(pointsLeft_t0, pointsLeft_t1, pointsRight_t0, currentVOFeatures, status); // can combine into one function
 
-    debug("[vo]: number of features after circular matching: " + std::to_string(currentVOFeatures.points.size()));
+    // debug("[vo]: number of features after circular matching: " + std::to_string(currentVOFeatures.points.size()));
 
     // feature detector points after circular matching
     //displayPoints(imageLeft_t0,currentVOFeatures.points);
@@ -133,6 +133,6 @@ int trackingFrame2Frame(cv::Mat& projMatrl, cv::Mat& projMatrr,
     #endif
 
     cv::Rodrigues(rvec, rotation);
-    debug("[vo]: inliers size after PnP: " + std::to_string(inliers.size().height) + " out of " + std::to_string(pointsLeft_t1.size()));
+    // debug("[vo]: inliers size after PnP: " + std::to_string(inliers.size().height) + " out of " + std::to_string(pointsLeft_t1.size()));
     return inliers.size().height;
 }
