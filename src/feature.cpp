@@ -1,6 +1,6 @@
 #include "feature.h"
 #include "bucket.h"
-
+#include "vo.h"
 #if USE_CUDA
 static void download(const cv::cuda::GpuMat& d_mat, std::vector<cv::Point2f>& vec)
 {
@@ -52,7 +52,7 @@ void appendNewFeatures(const cv::Mat& image, FeatureSet& current_features)
     // displayPoints(image,current_features.points);
 
     /* Bucketing features */
-    const int bucket_size = std::min(image.rows,image.cols)/BUCKET_DIVISOR; // TODO PARAM
+    const int bucket_size = 1 + std::min(image.rows,image.cols)/BUCKET_DIVISOR; // TODO PARAM
 
     // filter features in currentVOFeatures so that one per bucket
     bucketingFeatures(image, current_features, bucket_size, FEATURES_PER_BUCKET);
@@ -70,16 +70,15 @@ void bucketingFeatures(const cv::Mat& image, FeatureSet& current_features, int b
     // features_per_bucket: number of selected features per bucket
     int image_height = image.rows;
     int image_width = image.cols;
-    int buckets_nums_height = image_height/bucket_size;
-    int buckets_nums_width = image_width/bucket_size;
-    int buckets_number = buckets_nums_height * buckets_nums_width;
+    int buckets_nums_height = image_height/bucket_size + 1;
+    int buckets_nums_width = image_width/bucket_size + 1;
 
     std::vector<Bucket> Buckets;
 
     // initialize all the buckets
-    for (int buckets_idx_height = 0; buckets_idx_height <= buckets_nums_height; buckets_idx_height++)
+    for (int buckets_idx_height = 0; buckets_idx_height < buckets_nums_height; buckets_idx_height++)
     {
-        for (int buckets_idx_width = 0; buckets_idx_width <= buckets_nums_width; buckets_idx_width++)
+        for (int buckets_idx_width = 0; buckets_idx_width < buckets_nums_width; buckets_idx_width++)
         {
             // Ignore top rows of image.
             if (buckets_idx_height > BUCKET_START_ROW) Buckets.push_back(Bucket(features_per_bucket));
@@ -99,9 +98,9 @@ void bucketingFeatures(const cv::Mat& image, FeatureSet& current_features, int b
 
     /* Take features from buckets and put them back into the feature set */
     current_features.clear();
-    for (int buckets_idx_height = 0; buckets_idx_height <= buckets_nums_height; buckets_idx_height++)
+    for (int buckets_idx_height = 0; buckets_idx_height < buckets_nums_height; buckets_idx_height++)
     {
-        for (int buckets_idx_width = 0; buckets_idx_width <= buckets_nums_width; buckets_idx_width++)
+        for (int buckets_idx_width = 0; buckets_idx_width < buckets_nums_width; buckets_idx_width++)
         {
             buckets_idx = buckets_idx_height*buckets_nums_width + buckets_idx_width;
             FeatureSet bucket_features = Buckets[buckets_idx].features;

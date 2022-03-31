@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 5,
+            "activePatchIndex": 6,
             "patches": [
                 {
                     "date": 1648603065687,
@@ -28,6 +28,10 @@
                 {
                     "date": 1648604528109,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -64,9 +64,9 @@\n \t\t// greyscale conversion\n \t\tvoid to_greyscale(const cv::Mat &img_color, cv::Mat &img_grey);\n \n \t\t// runs the pipeline\n-\t\tvoid run();\n+\t\tstd::pair<double, double> run();\n \n \t\t// logging \n \t\tbool logging_path;\n \t\tstd::ofstream output_file;\n"
+                },
+                {
+                    "date": 1648686230407,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -52,9 +52,9 @@\n \n \t\t// cv::Mat rosImage2CvMat(const sensor_msgs::ImageConstPtr img);\n \n \t\t// stereo pair callback\n-\t\tstd::pair<double, double> stereo_callback(const cv::Mat& image_left, const cv::Mat& image_right);\n+\t\tstd::pair<cv::Mat, cv::Mat> stereo_callback(const cv::Mat& image_left, const cv::Mat& image_right);\n \n \t\t// orientation callback\n \t\t// void quat_callback(const::geometry_msgs::Quaternion::ConstPtr& msg);\n \n@@ -64,9 +64,9 @@\n \t\t// greyscale conversion\n \t\tvoid to_greyscale(const cv::Mat &img_color, cv::Mat &img_grey);\n \n \t\t// runs the pipeline\n-\t\tstd::pair<double, double> run();\n+\t\tstd::pair<cv::Mat, cv::Mat> run();\n \n \t\t// logging \n \t\tbool logging_path;\n \t\tstd::ofstream output_file;\n"
                 }
             ],
             "date": 1648603065687,

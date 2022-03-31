@@ -4,7 +4,7 @@ using namespace cv;
 /* Removes any feature points that did not circle back to their original location, with threshold.*/
 void checkValidMatch(std::vector<cv::Point2f>& points, std::vector<cv::Point2f>& points_return, std::vector<bool>& status, int threshold)
 {
-    int offset;
+    float offset;
     for (int i = 0; i < points.size(); i++)
     {
         offset = std::max(std::abs(points[i].x - points_return[i].x), std::abs(points[i].y - points_return[i].y));
@@ -58,7 +58,6 @@ void matchingFeatures(cv::Mat& imageLeft_t0, cv::Mat& imageRight_t0,
     // ----------------------------
 
     std::vector<cv::Point2f>  pointsLeftReturn_t0;   // feature points to check cicular matching validation
-
     // add new features if current number of features is below a threshold. TODO PARAM
     if (currentVOFeatures.size() < 4000)
     {
@@ -78,6 +77,7 @@ void matchingFeatures(cv::Mat& imageLeft_t0, cv::Mat& imageRight_t0,
     // displayTwoImages(imageLeft_t0, imageLeft_t1);
     // std::cout << imageLeft_t1-imageLeft_t0 << std::endl;
 
+    dbg(currentVOFeatures.size());
     #if USE_CUDA
         circularMatching_gpu(imageLeft_t0, imageRight_t0, imageLeft_t1, imageRight_t1,
                      pointsLeft_t0, pointsRight_t0, pointsLeft_t1, pointsRight_t1, pointsLeftReturn_t0, currentVOFeatures);
@@ -86,10 +86,12 @@ void matchingFeatures(cv::Mat& imageLeft_t0, cv::Mat& imageRight_t0,
                      pointsLeft_t0, pointsRight_t0, pointsLeft_t1, pointsRight_t1, pointsLeftReturn_t0, currentVOFeatures);
     #endif
 
+    dbg(currentVOFeatures.size());
     // check if circled back points are in range of original points
     std::vector<bool> status;
     checkValidMatch(pointsLeft_t0, pointsLeftReturn_t0, status, 1);
     removeInvalidPoints(pointsLeft_t0, pointsLeft_t1, pointsRight_t0, currentVOFeatures, status); // can combine into one function
+    dbg(currentVOFeatures.size());
 
     // debug("[vo]: number of features after circular matching: " + std::to_string(currentVOFeatures.points.size()));
 

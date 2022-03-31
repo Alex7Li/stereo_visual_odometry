@@ -80,14 +80,16 @@ PoseEstimator::PoseEstimator(cv::Mat projMatrl_, cv::Mat projMatrr_)
 // }
 
 // void PoseEstimator::stereo_callback(const sensor_msgs::ImageConstPtr& image_left, const sensor_msgs::ImageConstPtr& image_right)
-std::pair<double, double> PoseEstimator::stereo_callback(const cv::Mat& image_left, const cv::Mat& image_right)
+std::pair<cv::Mat, cv::Mat> PoseEstimator::stereo_callback(const cv::Mat& image_left, const cv::Mat& image_right)
 {
+    cv::Mat no_rotation = cv::Mat::eye(3, 3, CV_64F);
+    cv::Mat no_translation = cv::Mat::zeros(3, 1, CV_64F);
     if (!frame_id)
     {
         imageLeft_t0 = image_left;
         imageRight_t0 = image_right;
         frame_id++;
-        return std::make_pair(0, 0);
+        return std::make_pair(no_translation, no_rotation);
     }
     imageLeft_t1 = image_left;
     imageRight_t1 = image_right;
@@ -100,12 +102,14 @@ std::pair<double, double> PoseEstimator::stereo_callback(const cv::Mat& image_le
     return run();
 }
 
-std::pair<double, double> PoseEstimator::run()
+std::pair<cv::Mat, cv::Mat> PoseEstimator::run()
 {
+    cv::Mat no_rotation = cv::Mat::eye(3, 3, CV_64F);
+    cv::Mat no_translation = cv::Mat::zeros(3, 1, CV_64F);
     // debug("[node]: frame id " + std::to_string(frame_id));
     std::vector<cv::Point2f> pointsLeft_t0, pointsRight_t0, pointsLeft_t1, pointsRight_t1;  
-    matchingFeatures( imageLeft_t0, imageRight_t0, imageLeft_t1, imageRight_t1,  currentVOFeatures,
-                      pointsLeft_t0, pointsRight_t0, pointsLeft_t1, pointsRight_t1);  
+    matchingFeatures(imageLeft_t0, imageRight_t0, imageLeft_t1, imageRight_t1,  currentVOFeatures,
+                     pointsLeft_t0, pointsRight_t0, pointsLeft_t1, pointsRight_t1);  
 
     // visualize previous and next left image
     // displayTwoImages(imageLeft_t0, imageLeft_t1);
@@ -119,22 +123,22 @@ std::pair<double, double> PoseEstimator::run()
 
     // if not enough features don't use vo
     bool vo_usable = true;
-    std::cout << "EHLLO" << std::endl;
     if (currentVOFeatures.size() < features_threshold)
     {
         // debug("[node]: not enough features detected for vo: " + std::to_string(currentVOFeatures.size())  + " < " + std::to_string(features_threshold));
       vo_usable = false;        
-      std::cout << "rejected " << currentVOFeatures.size() << "\n";
     } else 
     {
 	    // Triangulate 3D Points
 	    cv::Mat points3D_t0, points4D_t0;
 	    cv::triangulatePoints( projMatrl,  projMatrr,  pointsLeft_t0,  pointsRight_t0,  points4D_t0);
 	    cv::convertPointsFromHomogeneous(points4D_t0.t(), points3D_t0);
-
-	    // PnP: computes rotation and translation between previous 3D points and next features
-	    int inliers = trackingFrame2Frame(projMatrl, projMatrr, pointsLeft_t1, points3D_t0, rotation, translation);
-
+      dbg(pointsLeft_t0.size());
+      // PnP: computes rotation and translation between previous 3D points and next features
+      int inliers = trackingFrame2Frame(projMatrl, projMatrr, pointsLeft_t1, points3D_t0, rotation, translation);
+      dbg(inliers);
+      dbg(rotation);
+      dbg(translation);
         // PnP may not converge
         if (inliers < features_threshold)
         {
@@ -165,9 +169,9 @@ std::pair<double, double> PoseEstimator::run()
         }
     }
 	  if (vo_usable) {
-      return std::make_pair(translation.at<double>(0), translation.at<double>(1));
+      return std::make_pair(translation, rotation);
     }
-      return std::make_pair(0, 0);
+    return std::make_pair(no_translation, no_rotation);
   //   if (vo_usable)
   //   {
   //   	debug("[node]: Using VO update");

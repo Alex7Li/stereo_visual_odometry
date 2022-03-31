@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 454,
+            "activePatchIndex": 477,
             "patches": [
                 {
                     "date": 1647548807643,
@@ -1824,6 +1824,98 @@
                 {
                     "date": 1648604765852,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -45,8 +45,10 @@\n     cv::Mat projMatrl(3, 4, CV_32F, left_P);\n     cv::Mat projMatrr(3, 4, CV_32F, right_P);\n     PoseEstimator vo(projMatrl, projMatrr);\n     cv::Mat frame_pose = cv::Mat::eye(4, 4, CV_64F);\n+    double x =0;\n+    double y =0;\n     for(int i = 0; i < N_FRAMES; i++) {\n       std::string xstr, ystr, dxstr, dystr;\n       // apparently we just doesn't read the first col of the csv\n       std::getline(buffer, xstr, ',');\n@@ -65,10 +67,12 @@\n       // std::pair<cv::Mat, cv::Mat> out = \n       std::pair<double, double> out = vo.stereo_callback(cur_img_l, cur_img_r);\n       // cv::Mat translation = out.first;\n       // cv::Mat rotation = out.second;\n-      double x = out.first;\n-      double y = out.second;\n+      double dx = out.first;\n+      double dy = out.second;\n+      x += dx;\n+      y += dy;\n       // If there was any update\n       // assert(isRotationMatrix(rotation));\n \n       // cv::Vec3f rotation_euler = rotationMatrixToEulerAngles(rotation);\n@@ -81,9 +85,9 @@\n       // }\n       // double x = frame_pose.col(3).at<double>(0);\n       // double y = frame_pose.col(3).at<double>(1);\n       std::cout << \"\\nx: \" << x << \" (\" << gtx << \")\\ty:\" <<  y << \" (\" << gty << \") \";\n-      // resultbuffer << x << \",\" << y << \",\" << gtx << \",\" << gty << \"\\n\";\n+      resultbuffer << x << \",\" << y << \",\" << gtx << \",\" << gty << \"\\n\";\n     }\n     std::cout << std::endl;\n     resultbuffer.close();\n     \n"
+                },
+                {
+                    "date": 1648669105564,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,9 +6,9 @@\n #include <sstream>\n #include <iomanip>\n #include \"vo.h\"\n #include \"pose_estimation_node.h\"\n-#define N_FRAMES 128\n+#define N_FRAMES 3\n \n \n bool isRotationMatrix(const cv::Mat &R)\n {\n"
+                },
+                {
+                    "date": 1648669379246,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -8,9 +8,8 @@\n #include \"vo.h\"\n #include \"pose_estimation_node.h\"\n #define N_FRAMES 3\n \n-\n bool isRotationMatrix(const cv::Mat &R)\n {\n     cv::Mat Rt;\n     transpose(R, Rt);\n"
+                },
+                {
+                    "date": 1648669420575,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -84,8 +84,9 @@\n       // }\n       // double x = frame_pose.col(3).at<double>(0);\n       // double y = frame_pose.col(3).at<double>(1);\n       std::cout << \"\\nx: \" << x << \" (\" << gtx << \")\\ty:\" <<  y << \" (\" << gty << \") \";\n+     \n       resultbuffer << x << \",\" << y << \",\" << gtx << \",\" << gty << \"\\n\";\n     }\n     std::cout << std::endl;\n     resultbuffer.close();\n"
+                },
+                {
+                    "date": 1648669485720,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -47,8 +47,9 @@\n     cv::Mat frame_pose = cv::Mat::eye(4, 4, CV_64F);\n     double x =0;\n     double y =0;\n     for(int i = 0; i < N_FRAMES; i++) {\n+      dbg(i);\n       std::string xstr, ystr, dxstr, dystr;\n       // apparently we just doesn't read the first col of the csv\n       std::getline(buffer, xstr, ',');\n       std::getline(buffer, ystr, ',');\n"
+                },
+                {
+                    "date": 1648670990966,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,9 +6,9 @@\n #include <sstream>\n #include <iomanip>\n #include \"vo.h\"\n #include \"pose_estimation_node.h\"\n-#define N_FRAMES 3\n+#define N_FRAMES 128\n \n bool isRotationMatrix(const cv::Mat &R)\n {\n     cv::Mat Rt;\n"
+                },
+                {
+                    "date": 1648671035087,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,9 +6,9 @@\n #include <sstream>\n #include <iomanip>\n #include \"vo.h\"\n #include \"pose_estimation_node.h\"\n-#define N_FRAMES 128\n+#define N_FRAMES 3\n \n bool isRotationMatrix(const cv::Mat &R)\n {\n     cv::Mat Rt;\n"
+                },
+                {
+                    "date": 1648672271073,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,9 +6,9 @@\n #include <sstream>\n #include <iomanip>\n #include \"vo.h\"\n #include \"pose_estimation_node.h\"\n-#define N_FRAMES 3\n+#define N_FRAMES 2\n \n bool isRotationMatrix(const cv::Mat &R)\n {\n     cv::Mat Rt;\n"
+                },
+                {
+                    "date": 1648673385598,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,9 +6,9 @@\n #include <sstream>\n #include <iomanip>\n #include \"vo.h\"\n #include \"pose_estimation_node.h\"\n-#define N_FRAMES 2\n+#define N_FRAMES 128\n \n bool isRotationMatrix(const cv::Mat &R)\n {\n     cv::Mat Rt;\n"
+                },
+                {
+                    "date": 1648673844377,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,9 +6,9 @@\n #include <sstream>\n #include <iomanip>\n #include \"vo.h\"\n #include \"pose_estimation_node.h\"\n-#define N_FRAMES 128\n+#define N_FRAMES 2\n \n bool isRotationMatrix(const cv::Mat &R)\n {\n     cv::Mat Rt;\n"
+                },
+                {
+                    "date": 1648684472236,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,9 +6,9 @@\n #include <sstream>\n #include <iomanip>\n #include \"vo.h\"\n #include \"pose_estimation_node.h\"\n-#define N_FRAMES 2\n+#define N_FRAMES 20\n \n bool isRotationMatrix(const cv::Mat &R)\n {\n     cv::Mat Rt;\n"
+                },
+                {
+                    "date": 1648685185591,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,9 +6,9 @@\n #include <sstream>\n #include <iomanip>\n #include \"vo.h\"\n #include \"pose_estimation_node.h\"\n-#define N_FRAMES 20\n+#define N_FRAMES 5\n \n bool isRotationMatrix(const cv::Mat &R)\n {\n     cv::Mat Rt;\n"
+                },
+                {
+                    "date": 1648685637493,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,9 +6,8 @@\n #include <sstream>\n #include <iomanip>\n #include \"vo.h\"\n #include \"pose_estimation_node.h\"\n-#define N_FRAMES 5\n \n bool isRotationMatrix(const cv::Mat &R)\n {\n     cv::Mat Rt;\n"
+                },
+                {
+                    "date": 1648685650098,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -19,8 +19,9 @@\n }\n \n // /usr/bin/clang++ -fdiagnostics-color=always -g /home/alex/git/stereo_visual_odometry/src/main.cpp -o /home/alex/git/stereo_visual_odometry/src/main `pkg-config opencv --cflags --libs` -v\n int main(int argc, char** argv) {\n+    N_FRAMES = stoi(argv[1]);\n     std::string folderName = \"run1\";\n     std::ifstream ground_truth;\n     ground_truth.open(folderName + \"/gt.csv\");\n     std::stringstream buffer;\n"
+                },
+                {
+                    "date": 1648685661245,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -19,9 +19,9 @@\n }\n \n // /usr/bin/clang++ -fdiagnostics-color=always -g /home/alex/git/stereo_visual_odometry/src/main.cpp -o /home/alex/git/stereo_visual_odometry/src/main `pkg-config opencv --cflags --libs` -v\n int main(int argc, char** argv) {\n-    N_FRAMES = stoi(argv[1]);\n+    int N_FRAMES = std::stoi(argv[1]);\n     std::string folderName = \"run1\";\n     std::ifstream ground_truth;\n     ground_truth.open(folderName + \"/gt.csv\");\n     std::stringstream buffer;\n"
+                },
+                {
+                    "date": 1648685847562,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -65,10 +65,10 @@\n       const cv::Mat cur_img_r =  cv::imread(rFileName.str(), cv::IMREAD_GRAYSCALE);\n       // if (i % 2 !=0) continue;\n       // std::pair<cv::Mat, cv::Mat> out = \n       std::pair<double, double> out = vo.stereo_callback(cur_img_l, cur_img_r);\n-      // cv::Mat translation = out.first;\n-      // cv::Mat rotation = out.second;\n+      cv::Mat translation = out.first;\n+      cv::Mat rotation = out.second;\n       double dx = out.first;\n       double dy = out.second;\n       x += dx;\n       y += dy;\n"
+                },
+                {
+                    "date": 1648685854393,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -64,9 +64,9 @@\n       const cv::Mat cur_img_l =  cv::imread(lFileName.str(), cv::IMREAD_GRAYSCALE);\n       const cv::Mat cur_img_r =  cv::imread(rFileName.str(), cv::IMREAD_GRAYSCALE);\n       // if (i % 2 !=0) continue;\n       // std::pair<cv::Mat, cv::Mat> out = \n-      std::pair<double, double> out = vo.stereo_callback(cur_img_l, cur_img_r);\n+      std::pair<cv::Mat, cv::Mat> out = vo.stereo_callback(cur_img_l, cur_img_r);\n       cv::Mat translation = out.first;\n       cv::Mat rotation = out.second;\n       double dx = out.first;\n       double dy = out.second;\n"
+                },
+                {
+                    "date": 1648685886202,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -71,8 +71,9 @@\n       double dx = out.first;\n       double dy = out.second;\n       x += dx;\n       y += dy;\n+      visual_odometry::integrateOdometryStereo(frame_pose, rotation, translation);\n       // If there was any update\n       // assert(isRotationMatrix(rotation));\n \n       // cv::Vec3f rotation_euler = rotationMatrixToEulerAngles(rotation);\n"
+                },
+                {
+                    "date": 1648685891651,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -71,9 +71,9 @@\n       double dx = out.first;\n       double dy = out.second;\n       x += dx;\n       y += dy;\n-      visual_odometry::integrateOdometryStereo(frame_pose, rotation, translation);\n+      vo::integrateOdometryStereo(frame_pose, rotation, translation);\n       // If there was any update\n       // assert(isRotationMatrix(rotation));\n \n       // cv::Vec3f rotation_euler = rotationMatrixToEulerAngles(rotation);\n"
+                },
+                {
+                    "date": 1648685898656,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -71,9 +71,9 @@\n       double dx = out.first;\n       double dy = out.second;\n       x += dx;\n       y += dy;\n-      vo::integrateOdometryStereo(frame_pose, rotation, translation);\n+      integrateOdometryStereo(frame_pose, rotation, translation);\n       // If there was any update\n       // assert(isRotationMatrix(rotation));\n \n       // cv::Vec3f rotation_euler = rotationMatrixToEulerAngles(rotation);\n"
+                },
+                {
+                    "date": 1648685927796,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,9 +6,31 @@\n #include <sstream>\n #include <iomanip>\n #include \"vo.h\"\n #include \"pose_estimation_node.h\"\n+void integrateOdometryStereo(cv::Mat &frame_pose, const cv::Mat &rotation,\n+                              const cv::Mat &translation_stereo) {\n+  cv::Mat rigid_body_transformation;\n \n+  cv::Mat addup = (cv::Mat_<double>(1, 4) << 0, 0, 0, 1);\n+\n+  cv::hconcat(rotation, translation_stereo, rigid_body_transformation);\n+  cv::vconcat(rigid_body_transformation, addup, rigid_body_transformation);\n+\n+  const double scale = sqrt(\n+    (translation_stereo.at<double>(0) * translation_stereo.at<double>(0)) +\n+    (translation_stereo.at<double>(1) * translation_stereo.at<double>(1)) +\n+    (translation_stereo.at<double>(2) * translation_stereo.at<double>(2)));\n+\n+  rigid_body_transformation = rigid_body_transformation.inv();\n+  if (scale > 0.001 && scale < 10) // WHY DO WE NEED THIS\n+  {\n+    frame_pose = frame_pose * rigid_body_transformation;\n+  } else {\n+    // std::cout << \"[WARNING] scale below 0.1, or incorrect translation\"\n+    //           << std::endl;\n+  }\n+}\n bool isRotationMatrix(const cv::Mat &R)\n {\n     cv::Mat Rt;\n     transpose(R, Rt);\n"
+                },
+                {
+                    "date": 1648685956055,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -21,15 +21,9 @@\n     (translation_stereo.at<double>(1) * translation_stereo.at<double>(1)) +\n     (translation_stereo.at<double>(2) * translation_stereo.at<double>(2)));\n \n   rigid_body_transformation = rigid_body_transformation.inv();\n-  if (scale > 0.001 && scale < 10) // WHY DO WE NEED THIS\n-  {\n-    frame_pose = frame_pose * rigid_body_transformation;\n-  } else {\n-    // std::cout << \"[WARNING] scale below 0.1, or incorrect translation\"\n-    //           << std::endl;\n-  }\n+  frame_pose = frame_pose * rigid_body_transformation;\n }\n bool isRotationMatrix(const cv::Mat &R)\n {\n     cv::Mat Rt;\n"
+                },
+                {
+                    "date": 1648686046564,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -101,10 +101,11 @@\n       //   std::cout << \"Rotation too big, skipping update\\n\";\n       // }\n       // double x = frame_pose.col(3).at<double>(0);\n       // double y = frame_pose.col(3).at<double>(1);\n+      double x = frame_pose.col(3).at<double>(0);\n+      double y = frame_pose.col(3).at<double>(1);\n       std::cout << \"\\nx: \" << x << \" (\" << gtx << \")\\ty:\" <<  y << \" (\" << gty << \") \";\n-     \n       resultbuffer << x << \",\" << y << \",\" << gtx << \",\" << gty << \"\\n\";\n     }\n     std::cout << std::endl;\n     resultbuffer.close();\n"
+                },
+                {
+                    "date": 1648686254539,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -83,12 +83,8 @@\n       // std::pair<cv::Mat, cv::Mat> out = \n       std::pair<cv::Mat, cv::Mat> out = vo.stereo_callback(cur_img_l, cur_img_r);\n       cv::Mat translation = out.first;\n       cv::Mat rotation = out.second;\n-      double dx = out.first;\n-      double dy = out.second;\n-      x += dx;\n-      y += dy;\n       integrateOdometryStereo(frame_pose, rotation, translation);\n       // If there was any update\n       // assert(isRotationMatrix(rotation));\n \n"
                 }
             ],
             "date": 1647548807643,

@@ -3,11 +3,15 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 1,
             "patches": [
                 {
                     "date": 1647642150784,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1648669336543,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,62 +1,5 @@\n {\n   \"files.associations\": {\n-    \"array\": \"cpp\",\n-    \"atomic\": \"cpp\",\n-    \"bit\": \"cpp\",\n-    \"*.tcc\": \"cpp\",\n-    \"cctype\": \"cpp\",\n-    \"chrono\": \"cpp\",\n-    \"cinttypes\": \"cpp\",\n-    \"clocale\": \"cpp\",\n-    \"cmath\": \"cpp\",\n-    \"compare\": \"cpp\",\n-    \"complex\": \"cpp\",\n-    \"concepts\": \"cpp\",\n-    \"cstdarg\": \"cpp\",\n-    \"cstddef\": \"cpp\",\n-    \"cstdint\": \"cpp\",\n-    \"cstdio\": \"cpp\",\n-    \"cstdlib\": \"cpp\",\n-    \"cstring\": \"cpp\",\n-    \"ctime\": \"cpp\",\n-    \"cwchar\": \"cpp\",\n-    \"cwctype\": \"cpp\",\n-    \"deque\": \"cpp\",\n-    \"list\": \"cpp\",\n-    \"map\": \"cpp\",\n-    \"set\": \"cpp\",\n-    \"string\": \"cpp\",\n-    \"unordered_map\": \"cpp\",\n-    \"vector\": \"cpp\",\n-    \"exception\": \"cpp\",\n-    \"algorithm\": \"cpp\",\n-    \"functional\": \"cpp\",\n-    \"iterator\": \"cpp\",\n-    \"memory\": \"cpp\",\n-    \"memory_resource\": \"cpp\",\n-    \"numeric\": \"cpp\",\n-    \"random\": \"cpp\",\n-    \"ratio\": \"cpp\",\n-    \"string_view\": \"cpp\",\n-    \"system_error\": \"cpp\",\n-    \"tuple\": \"cpp\",\n-    \"type_traits\": \"cpp\",\n-    \"utility\": \"cpp\",\n-    \"fstream\": \"cpp\",\n-    \"initializer_list\": \"cpp\",\n-    \"iomanip\": \"cpp\",\n-    \"iosfwd\": \"cpp\",\n-    \"iostream\": \"cpp\",\n-    \"istream\": \"cpp\",\n-    \"limits\": \"cpp\",\n-    \"new\": \"cpp\",\n-    \"numbers\": \"cpp\",\n-    \"ostream\": \"cpp\",\n-    \"sstream\": \"cpp\",\n-    \"stdexcept\": \"cpp\",\n-    \"streambuf\": \"cpp\",\n-    \"typeinfo\": \"cpp\",\n-    \"condition_variable\": \"cpp\",\n-    \"thread\": \"cpp\"\n+    \"sstream\": \"cpp\"\n   }\n }\n\\ No newline at end of file\n"
                 }
             ],
             "date": 1647642150784,

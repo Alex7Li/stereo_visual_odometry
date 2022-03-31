@@ -7,9 +7,23 @@
 #include <iomanip>
 #include "vo.h"
 #include "pose_estimation_node.h"
-#define N_FRAMES 128
+void integrateOdometryStereo(cv::Mat &frame_pose, const cv::Mat &rotation,
+                              const cv::Mat &translation_stereo) {
+  cv::Mat rigid_body_transformation;
 
+  cv::Mat addup = (cv::Mat_<double>(1, 4) << 0, 0, 0, 1);
 
+  cv::hconcat(rotation, translation_stereo, rigid_body_transformation);
+  cv::vconcat(rigid_body_transformation, addup, rigid_body_transformation);
+
+  const double scale = sqrt(
+    (translation_stereo.at<double>(0) * translation_stereo.at<double>(0)) +
+    (translation_stereo.at<double>(1) * translation_stereo.at<double>(1)) +
+    (translation_stereo.at<double>(2) * translation_stereo.at<double>(2)));
+
+  rigid_body_transformation = rigid_body_transformation.inv();
+  frame_pose = frame_pose * rigid_body_transformation;
+}
 bool isRotationMatrix(const cv::Mat &R)
 {
     cv::Mat Rt;
@@ -22,6 +36,7 @@ bool isRotationMatrix(const cv::Mat &R)
 
 // /usr/bin/clang++ -fdiagnostics-color=always -g /home/alex/git/stereo_visual_odometry/src/main.cpp -o /home/alex/git/stereo_visual_odometry/src/main `pkg-config opencv --cflags --libs` -v
 int main(int argc, char** argv) {
+    int N_FRAMES = std::stoi(argv[1]);
     std::string folderName = "run1";
     std::ifstream ground_truth;
     ground_truth.open(folderName + "/gt.csv");
@@ -49,6 +64,7 @@ int main(int argc, char** argv) {
     double x =0;
     double y =0;
     for(int i = 0; i < N_FRAMES; i++) {
+      dbg(i);
       std::string xstr, ystr, dxstr, dystr;
       // apparently we just doesn't read the first col of the csv
       std::getline(buffer, xstr, ',');
@@ -65,13 +81,10 @@ int main(int argc, char** argv) {
       const cv::Mat cur_img_r =  cv::imread(rFileName.str(), cv::IMREAD_GRAYSCALE);
       // if (i % 2 !=0) continue;
       // std::pair<cv::Mat, cv::Mat> out = 
-      std::pair<double, double> out = vo.stereo_callback(cur_img_l, cur_img_r);
-      // cv::Mat translation = out.first;
-      // cv::Mat rotation = out.second;
-      double dx = out.first;
-      double dy = out.second;
-      x += dx;
-      y += dy;
+      std::pair<cv::Mat, cv::Mat> out = vo.stereo_callback(cur_img_l, cur_img_r);
+      cv::Mat translation = out.first;
+      cv::Mat rotation = out.second;
+      integrateOdometryStereo(frame_pose, rotation, translation);
       // If there was any update
       // assert(isRotationMatrix(rotation));
 
@@ -85,6 +98,8 @@ int main(int argc, char** argv) {
       // }
       // double x = frame_pose.col(3).at<double>(0);
       // double y = frame_pose.col(3).at<double>(1);
+      double x = frame_pose.col(3).at<double>(0);
+      double y = frame_pose.col(3).at<double>(1);
       std::cout << "\nx: " << x << " (" << gtx << ")\ty:" <<  y << " (" << gty << ") ";
       resultbuffer << x << "," << y << "," << gtx << "," << gty << "\n";
     }

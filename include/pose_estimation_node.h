@@ -53,7 +53,7 @@ class PoseEstimator
 		// cv::Mat rosImage2CvMat(const sensor_msgs::ImageConstPtr img);
 
 		// stereo pair callback
-		std::pair<double, double> stereo_callback(const cv::Mat& image_left, const cv::Mat& image_right);
+		std::pair<cv::Mat, cv::Mat> stereo_callback(const cv::Mat& image_left, const cv::Mat& image_right);
 
 		// orientation callback
 		// void quat_callback(const::geometry_msgs::Quaternion::ConstPtr& msg);
@@ -65,7 +65,7 @@ class PoseEstimator
 		void to_greyscale(const cv::Mat &img_color, cv::Mat &img_grey);
 
 		// runs the pipeline
-		std::pair<double, double> run();
+		std::pair<cv::Mat, cv::Mat> run();
 
 		// logging 
 		bool logging_path;

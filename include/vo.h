@@ -21,6 +21,10 @@
 #include "bucket.h"
 #include "utils.h"
 
+#define dbg(x) std::cerr << " >>> " << #x << " = " << x << std::endl;
+#define dbga(a) std::cerr << " >>> " << #a << " = "; for(unsigned int xtw = 0; xtw < a.size(); xtw++) std::cerr << a[xtw] << " "; std::cerr << std::endl;
+#define dbgstr(a) std::cerr << " >>> " << a << std::endl;
+
 void matchingFeatures(cv::Mat& imageLeft_t0, cv::Mat& imageRight_t0,
                       cv::Mat& imageLeft_t1, cv::Mat& imageRight_t1, 
                       FeatureSet& currentVOFeatures,

@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 41,
+            "activePatchIndex": 63,
             "patches": [
                 {
                     "date": 1648602688933,
@@ -172,6 +172,94 @@
                 {
                     "date": 1648604675535,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -86,9 +86,9 @@\n     {\n         imageLeft_t0 = image_left;\n         imageRight_t0 = image_right;\n         frame_id++;\n-        return make_pair(0, 0);\n+        return std::make_pair(0, 0);\n     }\n     imageLeft_t1 = image_left;\n     imageRight_t1 = image_right;\n \n"
+                },
+                {
+                    "date": 1648669477678,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -118,14 +118,12 @@\n     //displayTracking(imageLeft_t1, pointsLeft_t0, pointsLeft_t1);\n \n     // if not enough features don't use vo\n     bool vo_usable = true;\n-    std::cout << \"EHLLO\" << std::endl;\n     if (currentVOFeatures.size() < features_threshold)\n     {\n         // debug(\"[node]: not enough features detected for vo: \" + std::to_string(currentVOFeatures.size())  + \" < \" + std::to_string(features_threshold));\n       vo_usable = false;        \n-      std::cout << \"rejected \" << currentVOFeatures.size() << \"\\n\";\n     } else \n     {\n \t    // Triangulate 3D Points\n \t    cv::Mat points3D_t0, points4D_t0;\n"
+                },
+                {
+                    "date": 1648673776035,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -128,9 +128,9 @@\n \t    // Triangulate 3D Points\n \t    cv::Mat points3D_t0, points4D_t0;\n \t    cv::triangulatePoints( projMatrl,  projMatrr,  pointsLeft_t0,  pointsRight_t0,  points4D_t0);\n \t    cv::convertPointsFromHomogeneous(points4D_t0.t(), points3D_t0);\n-\n+      dbg(points4D_t0);\n \t    // PnP: computes rotation and translation between previous 3D points and next features\n \t    int inliers = trackingFrame2Frame(projMatrl, projMatrr, pointsLeft_t1, points3D_t0, rotation, translation);\n \n         // PnP may not converge\n"
+                },
+                {
+                    "date": 1648673818042,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -128,9 +128,9 @@\n \t    // Triangulate 3D Points\n \t    cv::Mat points3D_t0, points4D_t0;\n \t    cv::triangulatePoints( projMatrl,  projMatrr,  pointsLeft_t0,  pointsRight_t0,  points4D_t0);\n \t    cv::convertPointsFromHomogeneous(points4D_t0.t(), points3D_t0);\n-      dbg(points4D_t0);\n+      dbg(points3D_t0);\n \t    // PnP: computes rotation and translation between previous 3D points and next features\n \t    int inliers = trackingFrame2Frame(projMatrl, projMatrr, pointsLeft_t1, points3D_t0, rotation, translation);\n \n         // PnP may not converge\n"
+                },
+                {
+                    "date": 1648674035823,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -128,11 +128,11 @@\n \t    // Triangulate 3D Points\n \t    cv::Mat points3D_t0, points4D_t0;\n \t    cv::triangulatePoints( projMatrl,  projMatrr,  pointsLeft_t0,  pointsRight_t0,  points4D_t0);\n \t    cv::convertPointsFromHomogeneous(points4D_t0.t(), points3D_t0);\n-      dbg(points3D_t0);\n \t    // PnP: computes rotation and translation between previous 3D points and next features\n \t    int inliers = trackingFrame2Frame(projMatrl, projMatrr, pointsLeft_t1, points3D_t0, rotation, translation);\n+      dbg(inliers);\n \n         // PnP may not converge\n         if (inliers < features_threshold)\n         {\n"
+                },
+                {
+                    "date": 1648684026659,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -130,9 +130,9 @@\n \t    cv::triangulatePoints( projMatrl,  projMatrr,  pointsLeft_t0,  pointsRight_t0,  points4D_t0);\n \t    cv::convertPointsFromHomogeneous(points4D_t0.t(), points3D_t0);\n \t    // PnP: computes rotation and translation between previous 3D points and next features\n \t    int inliers = trackingFrame2Frame(projMatrl, projMatrr, pointsLeft_t1, points3D_t0, rotation, translation);\n-      dbg(inliers);\n+      dbg(points3D_t0);\n \n         // PnP may not converge\n         if (inliers < features_threshold)\n         {\n"
+                },
+                {
+                    "date": 1648684360825,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -130,9 +130,8 @@\n \t    cv::triangulatePoints( projMatrl,  projMatrr,  pointsLeft_t0,  pointsRight_t0,  points4D_t0);\n \t    cv::convertPointsFromHomogeneous(points4D_t0.t(), points3D_t0);\n \t    // PnP: computes rotation and translation between previous 3D points and next features\n \t    int inliers = trackingFrame2Frame(projMatrl, projMatrr, pointsLeft_t1, points3D_t0, rotation, translation);\n-      dbg(points3D_t0);\n \n         // PnP may not converge\n         if (inliers < features_threshold)\n         {\n"
+                },
+                {
+                    "date": 1648684411989,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -160,8 +160,9 @@\n                 std::cout << \"rejected\" << scale_translation << \" \" << abs(angle);\n             }\n         }\n     }\n+    dbg(translation);\n \t  if (vo_usable) {\n       return std::make_pair(translation.at<double>(0), translation.at<double>(1));\n     }\n       return std::make_pair(0, 0);\n"
+                },
+                {
+                    "date": 1648684524919,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -160,13 +160,13 @@\n                 std::cout << \"rejected\" << scale_translation << \" \" << abs(angle);\n             }\n         }\n     }\n-    dbg(translation);\n \t  if (vo_usable) {\n       return std::make_pair(translation.at<double>(0), translation.at<double>(1));\n     }\n-      return std::make_pair(0, 0);\n+    dbg(translation);\n+    return std::make_pair(0, 0);\n   //   if (vo_usable)\n   //   {\n   //   \tdebug(\"[node]: Using VO update\");\n   //   \t// rotate vo translation to rover frame\n"
+                },
+                {
+                    "date": 1648684535479,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -161,11 +161,11 @@\n             }\n         }\n     }\n \t  if (vo_usable) {\n+      dbg(translation);\n       return std::make_pair(translation.at<double>(0), translation.at<double>(1));\n     }\n-    dbg(translation);\n     return std::make_pair(0, 0);\n   //   if (vo_usable)\n   //   {\n   //   \tdebug(\"[node]: Using VO update\");\n"
+                },
+                {
+                    "date": 1648685099237,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -128,11 +128,17 @@\n \t    // Triangulate 3D Points\n \t    cv::Mat points3D_t0, points4D_t0;\n \t    cv::triangulatePoints( projMatrl,  projMatrr,  pointsLeft_t0,  pointsRight_t0,  points4D_t0);\n \t    cv::convertPointsFromHomogeneous(points4D_t0.t(), points3D_t0);\n-\t    // PnP: computes rotation and translation between previous 3D points and next features\n-\t    int inliers = trackingFrame2Frame(projMatrl, projMatrr, pointsLeft_t1, points3D_t0, rotation, translation);\n-\n+      dbg(projMatrl);\n+      dbg(pointsLeft_t1);\n+      dbg(points3D_t0);\n+      // PnP: computes rotation and translation between previous 3D points and next features\n+      int inliers = trackingFrame2Frame(projMatrl, projMatrr, pointsLeft_t1, points3D_t0, rotation, translation);\n+      dbg(rotation);\n+      dbg(translation);\n+      dbg(rotation);\n+      dbg(translation);\n         // PnP may not converge\n         if (inliers < features_threshold)\n         {\n             // debug(\"[node]: Not enough inliers from PnP: \" + std::to_string(inliers) + \" < \" + std::to_string(features_threshold));\n"
+                },
+                {
+                    "date": 1648685105673,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -133,12 +133,11 @@\n       dbg(pointsLeft_t1);\n       dbg(points3D_t0);\n       // PnP: computes rotation and translation between previous 3D points and next features\n       int inliers = trackingFrame2Frame(projMatrl, projMatrr, pointsLeft_t1, points3D_t0, rotation, translation);\n+      dbg(inliers);\n       dbg(rotation);\n       dbg(translation);\n-      dbg(rotation);\n-      dbg(translation);\n         // PnP may not converge\n         if (inliers < features_threshold)\n         {\n             // debug(\"[node]: Not enough inliers from PnP: \" + std::to_string(inliers) + \" < \" + std::to_string(features_threshold));\n"
+                },
+                {
+                    "date": 1648685391573,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -128,11 +128,9 @@\n \t    // Triangulate 3D Points\n \t    cv::Mat points3D_t0, points4D_t0;\n \t    cv::triangulatePoints( projMatrl,  projMatrr,  pointsLeft_t0,  pointsRight_t0,  points4D_t0);\n \t    cv::convertPointsFromHomogeneous(points4D_t0.t(), points3D_t0);\n-      dbg(projMatrl);\n-      dbg(pointsLeft_t1);\n-      dbg(points3D_t0);\n+      dbg(pointsLeft_t0.size());\n       // PnP: computes rotation and translation between previous 3D points and next features\n       int inliers = trackingFrame2Frame(projMatrl, projMatrr, pointsLeft_t1, points3D_t0, rotation, translation);\n       dbg(inliers);\n       dbg(rotation);\n"
+                },
+                {
+                    "date": 1648685470001,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -164,9 +164,8 @@\n             }\n         }\n     }\n \t  if (vo_usable) {\n-      dbg(translation);\n       return std::make_pair(translation.at<double>(0), translation.at<double>(1));\n     }\n     return std::make_pair(0, 0);\n   //   if (vo_usable)\n"
+                },
+                {
+                    "date": 1648686061257,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -79,9 +79,9 @@\n //     return cv_ptr->image;\n // }\n \n // void PoseEstimator::stereo_callback(const sensor_msgs::ImageConstPtr& image_left, const sensor_msgs::ImageConstPtr& image_right)\n-std::pair<double, double> PoseEstimator::stereo_callback(const cv::Mat& image_left, const cv::Mat& image_right)\n+std::pair<cv::Mat, cv::Mat> PoseEstimator::stereo_callback(const cv::Mat& image_left, const cv::Mat& image_right)\n {\n     if (!frame_id)\n     {\n         imageLeft_t0 = image_left;\n"
+                },
+                {
+                    "date": 1648686070240,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -81,8 +81,10 @@\n \n // void PoseEstimator::stereo_callback(const sensor_msgs::ImageConstPtr& image_left, const sensor_msgs::ImageConstPtr& image_right)\n std::pair<cv::Mat, cv::Mat> PoseEstimator::stereo_callback(const cv::Mat& image_left, const cv::Mat& image_right)\n {\n+    cv::Mat rotation = cv::Mat::eye(3, 3, CV_64F);\n+    cv::Mat translation = cv::Mat::zeros(3, 1, CV_64F);\n     if (!frame_id)\n     {\n         imageLeft_t0 = image_left;\n         imageRight_t0 = image_right;\n"
+                },
+                {
+                    "date": 1648686084115,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -81,16 +81,16 @@\n \n // void PoseEstimator::stereo_callback(const sensor_msgs::ImageConstPtr& image_left, const sensor_msgs::ImageConstPtr& image_right)\n std::pair<cv::Mat, cv::Mat> PoseEstimator::stereo_callback(const cv::Mat& image_left, const cv::Mat& image_right)\n {\n-    cv::Mat rotation = cv::Mat::eye(3, 3, CV_64F);\n-    cv::Mat translation = cv::Mat::zeros(3, 1, CV_64F);\n+    cv::Mat no_rotation = cv::Mat::eye(3, 3, CV_64F);\n+    cv::Mat no_translation = cv::Mat::zeros(3, 1, CV_64F);\n     if (!frame_id)\n     {\n         imageLeft_t0 = image_left;\n         imageRight_t0 = image_right;\n         frame_id++;\n-        return std::make_pair(0, 0);\n+        return std::make_pair(translation, rotation);\n     }\n     imageLeft_t1 = image_left;\n     imageRight_t1 = image_right;\n \n"
+                },
+                {
+                    "date": 1648686089463,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -88,9 +88,9 @@\n     {\n         imageLeft_t0 = image_left;\n         imageRight_t0 = image_right;\n         frame_id++;\n-        return std::make_pair(translation, rotation);\n+        return std::make_pair(no_translation, no_rotation);\n     }\n     imageLeft_t1 = image_left;\n     imageRight_t1 = image_right;\n \n"
+                },
+                {
+                    "date": 1648686100195,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -101,9 +101,9 @@\n     // else \n     return run();\n }\n \n-std::pair<double, double> PoseEstimator::run()\n+std::pair<cv::Mat, cv::Mat> PoseEstimator::run()\n {\n     // debug(\"[node]: frame id \" + std::to_string(frame_id));\n     std::vector<cv::Point2f> pointsLeft_t0, pointsRight_t0, pointsLeft_t1, pointsRight_t1;  \n     matchingFeatures( imageLeft_t0, imageRight_t0, imageLeft_t1, imageRight_t1,  currentVOFeatures,\n"
+                },
+                {
+                    "date": 1648686106003,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -103,8 +103,10 @@\n }\n \n std::pair<cv::Mat, cv::Mat> PoseEstimator::run()\n {\n+    cv::Mat no_rotation = cv::Mat::eye(3, 3, CV_64F);\n+    cv::Mat no_translation = cv::Mat::zeros(3, 1, CV_64F);\n     // debug(\"[node]: frame id \" + std::to_string(frame_id));\n     std::vector<cv::Point2f> pointsLeft_t0, pointsRight_t0, pointsLeft_t1, pointsRight_t1;  \n     matchingFeatures( imageLeft_t0, imageRight_t0, imageLeft_t1, imageRight_t1,  currentVOFeatures,\n                       pointsLeft_t0, pointsRight_t0, pointsLeft_t1, pointsRight_t1);  \n"
+                },
+                {
+                    "date": 1648686173618,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -107,10 +107,10 @@\n     cv::Mat no_rotation = cv::Mat::eye(3, 3, CV_64F);\n     cv::Mat no_translation = cv::Mat::zeros(3, 1, CV_64F);\n     // debug(\"[node]: frame id \" + std::to_string(frame_id));\n     std::vector<cv::Point2f> pointsLeft_t0, pointsRight_t0, pointsLeft_t1, pointsRight_t1;  \n-    matchingFeatures( imageLeft_t0, imageRight_t0, imageLeft_t1, imageRight_t1,  currentVOFeatures,\n-                      pointsLeft_t0, pointsRight_t0, pointsLeft_t1, pointsRight_t1);  \n+    matchingFeatures(imageLeft_t0, imageRight_t0, imageLeft_t1, imageRight_t1,  currentVOFeatures,\n+                     pointsLeft_t0, pointsRight_t0, pointsLeft_t1, pointsRight_t1);  \n \n     // visualize previous and next left image\n     // displayTwoImages(imageLeft_t0, imageLeft_t1);\n \n"
+                },
+                {
+                    "date": 1648686306241,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -170,9 +170,9 @@\n     }\n \t  if (vo_usable) {\n       return std::make_pair(translation.at<double>(0), translation.at<double>(1));\n     }\n-    return std::make_pair(0, 0);\n+    return std::make_pair(no_translation, no_rotation);\n   //   if (vo_usable)\n   //   {\n   //   \tdebug(\"[node]: Using VO update\");\n   //   \t// rotate vo translation to rover frame\n"
+                },
+                {
+                    "date": 1648686314284,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -168,9 +168,9 @@\n             }\n         }\n     }\n \t  if (vo_usable) {\n-      return std::make_pair(translation.at<double>(0), translation.at<double>(1));\n+      return std::make_pair(translation, rotation);\n     }\n     return std::make_pair(no_translation, no_rotation);\n   //   if (vo_usable)\n   //   {\n"
                 }
             ],
             "date": 1648602688933,
