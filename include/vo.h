@@ -76,19 +76,24 @@ namespace visual_odometry {
 /**
  * @brief Number of buckets to divide the image into.
  */
-const int BUCKET_START_ROW = 2;
+const int BUCKET_START_ROW = 3;
 
 /**
  * @brief Number of buckets along each axis of the image.
  * In total, there will be BUCKETS_ALONG_HEIGHT * BUCKETS_ALONG_WIDTH
  * buckets.
  */
-const int BUCKETS_ALONG_HEIGHT = 10;
-const int BUCKETS_ALONG_WIDTH = 10;
+const int BUCKETS_ALONG_HEIGHT = 15;
+const int BUCKETS_ALONG_WIDTH = 26;
 /**
  * @brief Maximum number of features per bucket
  */
 const int FEATURES_PER_BUCKET = 4;
+
+/**
+ * @brief Minimum number of features before using VO
+ */
+const int FEATURES_THRESHOLD = 30;
 
 /**
  * @brief Ignore all features that have been around but not detected
@@ -99,7 +104,7 @@ const int AGE_THRESHOLD = 10;
 /**
  * @brief Minimum confidence for the robot to report 
  */
-const int FAST_THRESHOLD = 10;
+const int FAST_THRESHOLD = 20;
 
 
 /**
@@ -290,15 +295,6 @@ std::vector<bool> circularMatching(const cv::Mat img_0, const cv::Mat img_1,
                         std::vector<cv::Point2f> & points_0_return);
 
 /**
- * @brief Compute the three euler angles for a given rotation matrix.
- *
- * @param R A rotation matrix
- *
- * @return cv::Vec3f (x, y, z) euler angles for R.
- */
-cv::Vec3f rotationMatrixToEulerAngles(const cv::Mat &R);
-
-/**
  * @brief Given two vectors of points, find the locations where they
  * differ.
  * 
@@ -325,8 +321,10 @@ std::vector<bool> findUnmovedPoints(const std::vector<cv::Point2f> &points_1,
  * @param rotation Matrix to store the estimated rotation output in.
  *
  * @param translation Matrix to store the estimated translation in.
+ * 
+ * @return The number of inliers in the best RANSAC transform
  */
-void cameraToWorld(const cv::Mat &cameraProjection,
+int cameraToWorld(const cv::Mat &cameraProjection,
                 const std::vector<cv::Point2f> &cameraPoints,
                 const cv::Mat &worldPoints, cv::Mat &rotation,
                 cv::Mat &translation);

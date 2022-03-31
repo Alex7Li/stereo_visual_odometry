@@ -25,15 +25,15 @@ VisualOdometry::VisualOdometry(const cv::Mat leftCameraProjection,
 VisualOdometry::~VisualOdometry() {}
 std::pair<cv::Mat, cv::Mat> VisualOdometry::stereo_callback(const cv::Mat &imageLeft,
                                       const cv::Mat &imageRight) {
-    cv::Mat rotation = cv::Mat::eye(3, 3, CV_64F);
-    cv::Mat translation = cv::Mat::zeros(3, 1, CV_64F);
+    cv::Mat no_rotation = cv::Mat::eye(3, 3, CV_64F);
+    cv::Mat no_translation = cv::Mat::zeros(3, 1, CV_64F);
     // Wait until we have at least two time steps of data
     // to begin predicting the change in pose.
     if (!frame_id) {
       imageLeftT0_ = imageLeft;
       imageRightT0_ = imageRight;
       frame_id++;
-      return std::make_pair(translation, rotation);
+      return std::make_pair(no_translation, no_rotation);
     }
 
     imageLeftT1_ = imageLeft;
@@ -48,12 +48,11 @@ std::pair<cv::Mat, cv::Mat> VisualOdometry::stereo_callback(const cv::Mat &image
     // Set new images as old images.
     imageLeftT0_ = imageLeftT1_;
     imageRightT0_ = imageRightT1_;
-    dbg(currentVOFeatures.size());
-    if (currentVOFeatures.size() < 5) {
+    if (currentVOFeatures.size() < FEATURES_THRESHOLD) {
       // There are not enough features to fully determine
       // equations for pose estimation, so presume nothing and exit.
       frame_id++;
-      return std::make_pair(translation, rotation);
+      return std::make_pair(no_translation, no_rotation);
     }
 
     // ---------------------
@@ -63,27 +62,40 @@ std::pair<cv::Mat, cv::Mat> VisualOdometry::stereo_callback(const cv::Mat &image
     cv::triangulatePoints(leftCameraProjection_, rightCameraProjection_,
                           pointsLeftT0, pointsRightT0, world_homogenous_points_T0);
     cv::convertPointsFromHomogeneous(world_homogenous_points_T0.t(), world_points_T0);
-
     // ---------------------
     // Tracking transfomation
     // ---------------------
-    cameraToWorld(leftCameraProjection_,
+    dbg(pointsLeftT0.size());
+
+    cv::Mat rotation = cv::Mat::eye(3, 3, CV_64F);
+    cv::Mat translation = cv::Mat::zeros(3, 1, CV_64F);
+    int inliers = cameraToWorld(leftCameraProjection_,
         pointsLeftT1, world_points_T0, rotation, translation);
+    dbg(inliers);
+    dbg(rotation);
+    dbg(translation);
+    // If we failed to converge
+    if (inliers < FEATURES_THRESHOLD) {
+      // There are not enough features to fully determine
+      // equations for pose estimation, so presume nothing and exit.
+      frame_id++;
+      return std::make_pair(no_translation, no_rotation);
+    }
 
     // ------------------------------------------------
     // Integrating
     // ------------------------------------------------
-    // cv::Vec3f rotation_euler = rotationMatrixToEulerAngles(rotation);
-    // Don't perform an update if the output is unusually large, indicates a error elsewhere.
-    // if (abs(rotation_euler[1]) < 0.1 && abs(rotation_euler[0]) < 0.1 &&
-    //     abs(rotation_euler[2]) < 0.1) {
-    //   integrateOdometryStereo(frame_pose, rotation, translation);
-    // } else {
-    //   dbgstr("Likely error, rotation was huge.");
-    // }
+    double translation_norm = cv::norm(translation);
+    cv::Mat rotation_rodrigues;
+    cv::Rodrigues(rotation, rotation_rodrigues);  
+    double angle = cv::norm(rotation_rodrigues, cv::NORM_L2);
+    if(translation_norm < .01 || translation_norm > .1 || abs(angle) > 0.5) {
+      dbgstr("Translation too suspicious, not updating");
+      return std::make_pair(no_translation, no_rotation);
+    }
+    dbg(translation);
     cv::Mat xyz = frame_pose.col(3).clone();
     cv::Mat R = frame_pose(cv::Rect(0, 0, 3, 3));
-
     // publish
     // if (true) {
     //     static tf::TransformBroadcaster br;
@@ -194,41 +206,8 @@ void visual_odometry::integrateOdometryStereo(cv::Mat &frame_pose, const cv::Mat
   cv::hconcat(rotation, translation_stereo, rigid_body_transformation);
   cv::vconcat(rigid_body_transformation, addup, rigid_body_transformation);
 
-  const double scale = sqrt(
-    (translation_stereo.at<double>(0) * translation_stereo.at<double>(0)) +
-    (translation_stereo.at<double>(1) * translation_stereo.at<double>(1)) +
-    (translation_stereo.at<double>(2) * translation_stereo.at<double>(2)));
-
   rigid_body_transformation = rigid_body_transformation.inv();
-  if (scale > 0.001 && scale < 10) // WHY DO WE NEED THIS
-  {
-    frame_pose = frame_pose * rigid_body_transformation;
-  } else {
-    // std::cout << "[WARNING] scale below 0.1, or incorrect translation"
-    //           << std::endl;
-  }
-}
-
-// Calculates rotation matrix to euler angles
-// The result is the same as MATLAB except the order
-// of the euler angles ( x and z are swapped ).
-cv::Vec3f visual_odometry::rotationMatrixToEulerAngles(const cv::Mat & R) {
-  float sy = sqrt(R.at<double>(0, 0) * R.at<double>(0, 0) +
-                  R.at<double>(1, 0) * R.at<double>(1, 0));
-
-  bool singular = sy < 1e-6;
-
-  float x, y, z;
-  if (!singular) {
-    x = atan2(R.at<double>(2, 1), R.at<double>(2, 2));
-    y = atan2(-R.at<double>(2, 0), sy);
-    z = atan2(R.at<double>(1, 0), R.at<double>(0, 0));
-  } else {
-    x = atan2(-R.at<double>(1, 2), R.at<double>(1, 1));
-    y = atan2(-R.at<double>(2, 0), sy);
-    z = 0;
-  }
-  return cv::Vec3f(x, y, z);
+  frame_pose = frame_pose * rigid_body_transformation;
 }
 
 // --------------------------------
@@ -252,24 +231,18 @@ std::vector<bool> visual_odometry::findUnmovedPoints(const std::vector<cv::Point
   return status;
 }
 
-void visual_odometry::cameraToWorld(
+int visual_odometry::cameraToWorld(
     const cv::Mat & cameraProjection,
     const std::vector<cv::Point2f> & cameraPoints, const cv::Mat & worldPoints,
     cv::Mat & rotation, cv::Mat & translation) {
   // Calculate frame to frame transformation
   cv::Mat distCoeffs = cv::Mat::zeros(4, 1, CV_64FC1);
   cv::Mat rvec = cv::Mat::zeros(3, 1, CV_64FC1);
+  // TODO: Why is this defined this way?? Bug??
   cv::Mat intrinsic_matrix =
-      (cv::Mat_<float>(3, 3) << cameraProjection.at<float>(0, 0),
-        cameraProjection.at<float>(0, 1),
-        cameraProjection.at<float>(0, 2),
-        cameraProjection.at<float>(1, 0),
-        cameraProjection.at<float>(1, 1),
-        cameraProjection.at<float>(1, 2),
-        cameraProjection.at<float>(1, 1),
-        cameraProjection.at<float>(1, 2),
-        cameraProjection.at<float>(1, 3));
-
+      (cv::Mat_<float>(3, 3) << cameraProjection.at<float>(0, 0), cameraProjection.at<float>(0, 1), cameraProjection.at<float>(0, 2),
+        cameraProjection.at<float>(1, 0), cameraProjection.at<float>(1, 1), cameraProjection.at<float>(1, 2),
+        cameraProjection.at<float>(1, 1), cameraProjection.at<float>(1, 2), cameraProjection.at<float>(1, 3));
   int iterationsCount = 500; // number of Ransac iterations.
   float reprojectionError = .5; // maximum allowed distance to consider it an inlier.
   float confidence = 0.999; // RANSAC successful confidence.
@@ -282,6 +255,7 @@ void visual_odometry::cameraToWorld(
                       reprojectionError, confidence, inliers, flags);
 
   cv::Rodrigues(rvec, rotation);
+  return inliers.size().height;
 }
 
 void visual_odometry::matchingFeatures(
@@ -294,14 +268,15 @@ void visual_odometry::matchingFeatures(
   
   std::vector<cv::Point2f> pointsLeftReturn_t0; // feature points to check
                                                 // circular matching validation
+  
   if(currentVOFeatures.size() < 4000) {
       // update feature set with detected features from the image.
       currentVOFeatures.appendFeaturesFromImage(imageLeft_t0);
   }
-  if(currentVOFeatures.size() < 100) {
-      // Just append a bunch of random features
-      currentVOFeatures.appendGridOfFeatures(imageLeft_t0);
-  }
+  // if(currentVOFeatures.size() < 100) {
+  //     // Just append a bunch of random features
+  //     currentVOFeatures.appendGridOfFeatures(imageLeft_t0);
+  // }
 
   // --------------------------------------------------------
   // Feature tracking using KLT tracker, bucketing and circular matching.
@@ -309,12 +284,14 @@ void visual_odometry::matchingFeatures(
 
   pointsLeftT0 = currentVOFeatures.points;
   if (currentVOFeatures.points.size() == 0) return; // early exit
+  dbg(pointsLeftT0.size());
 
   std::vector<bool> matchingStatus = circularMatching(imageLeft_t0, imageRight_t0, imageLeft_t1, imageRight_t1, 
                     pointsLeftT0, pointsRightT0, pointsLeftT1, pointsRightT1, pointsLeftReturn_t0);
 
+  dbg(pointsLeftT0.size());
   // Check if circled back points are in range of original points.
-  std::vector<bool> status = findUnmovedPoints(pointsLeftT0, pointsLeftReturn_t0, 1.999);
+  std::vector<bool> status = findUnmovedPoints(pointsLeftT0, pointsLeftReturn_t0, 1);
   // Only keep points that were matched correctly and are in the image bounds.
   for(unsigned int i = 0; i < status.size(); i++) {
     if(!matchingStatus[i] ||

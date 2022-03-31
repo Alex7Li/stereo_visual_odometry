@@ -17,7 +17,6 @@ void Bucket::add_feature(const cv::Point2f point, const int age, const int stren
   // If max size is none, we never add anything.
   if (!max_size) return;
 
-  const int score = compute_score(age, strength);
   // Don't add sufficently old Features
   if (age < AGE_THRESHOLD) {
     // Insert any feature before bucket is full.
@@ -26,6 +25,7 @@ void Bucket::add_feature(const cv::Point2f point, const int age, const int stren
       features.ages.push_back(age);
       features.strengths.push_back(strength);
     } else {
+        const int score = compute_score(age, strength);
         // Replace the feauture with the lowest score.
         int score_min = compute_score(features.ages[0],features.strengths[0]);
         int score_min_idx = 0;
@@ -76,7 +76,6 @@ void FeatureSet::appendFeaturesFromImage(const cv::Mat & image) {
     std::vector<int>  ages_new(points_new.size(), 0);
     ages.insert(ages.end(), ages_new.begin(), ages_new.end());
     strengths.insert(strengths.end(), response_strength.begin(), response_strength.end());
-
     filterByBucketLocation(image);
 }
 void FeatureSet::appendGridOfFeatures(const cv::Mat & image) {
@@ -114,7 +113,6 @@ void FeatureSet::filterByBucketLocationInternal(const cv::Mat & image, const int
     /* Bucketing features */
     int bucket_height = ceiling_division(image_height, buckets_along_height);
     int bucket_width = ceiling_division(image_width, buckets_along_width);
-
     std::vector<Bucket> buckets;
 
     // initialize all the buckets

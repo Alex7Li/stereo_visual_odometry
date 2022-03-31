@@ -28,7 +28,7 @@ for i in range(len(xs)):
     xs[i], ys[i] = R1 @ np.array([xs[i], ys[i]])
     gtxs[i], gtys[i] = R2 @ np.array([gtxs[i], gtys[i]])
 colors = cm.rainbow(np.linspace(0, 1, len(ys)))
-plt.scatter(xs, ys, color='r')
+plt.scatter(xs, ys, color=colors)
 plt.scatter(gtxs, gtys, color='b')
 plt.xlim(-.5,4.5)
 plt.ylim(-.3,.3)
