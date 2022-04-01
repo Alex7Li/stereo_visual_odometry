@@ -30,7 +30,7 @@ for i in range(len(xs)):
 colors = cm.rainbow(np.linspace(0, 1, len(ys)))
 plt.scatter(xs, ys, color=colors)
 plt.scatter(gtxs, gtys, color='b')
-plt.xlim(-.5,4.5)
-plt.ylim(-.3,.3)
+plt.xlim(0,4)
+plt.ylim(-2,2)
 plt.show()
 

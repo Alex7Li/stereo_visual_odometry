@@ -93,7 +93,7 @@ const int FEATURES_PER_BUCKET = 4;
 /**
  * @brief Minimum number of features before using VO
  */
-const int FEATURES_THRESHOLD = 30;
+const int FEATURES_THRESHOLD = 20;
 
 /**
  * @brief Ignore all features that have been around but not detected
@@ -104,7 +104,7 @@ const int AGE_THRESHOLD = 10;
 /**
  * @brief Minimum confidence for the robot to report 
  */
-const int FAST_THRESHOLD = 20;
+const int FAST_THRESHOLD = 10;
 
 
 /**
@@ -154,8 +154,9 @@ public:
    * features, and all all such features into this feature set.
    *
    * @param image The image to obtain all points from.
+   * @param fast_threshold Threshold for detecting features with FAST.
    */
-  void appendFeaturesFromImage(const cv::Mat &image);
+  void appendFeaturesFromImage(const cv::Mat &image, const int fast_threshold);
   /**
    * @brief  Create a grid of feature points to cover a given image
    *
@@ -250,11 +251,13 @@ public:
  * points.
  *
  * @param image The image we're detecting.
+ * @param fast_threshold The threshold to detect a feature.
  * @param response_strengths: A vector to fill with the response strength of each newly detected feature.
  *
  * @return A vector with the locations of all newly detected features.
  */
-std::vector<cv::Point2f> featureDetectionFast(const cv::Mat image, std::vector<float>& response_strengths);
+std::vector<cv::Point2f> featureDetectionFast(const cv::Mat image, const int fast_threshold,
+      std::vector<float>& response_strengths);
 
 /**
  * @brief Given parallel vectors of points, ages, and the status of those points,
@@ -267,11 +270,22 @@ std::vector<cv::Point2f> featureDetectionFast(const cv::Mat image, std::vector<f
  *
  * @param status_all a vector with 1 If the point is valid, and 0 if it should be discarded.
  */
-void deleteFeaturesWithFailureStatus(
+void deleteFeaturesAndPointsWithFailureStatus(
     std::vector<cv::Point2f> &points0, std::vector<cv::Point2f> &points1,
     std::vector<cv::Point2f> &points2, std::vector<cv::Point2f> &points3,
     std::vector<cv::Point2f> &points4, FeatureSet &currentFeatures,
     const std::vector<bool> &status_all);
+/**
+ * @brief Given parallel vectors of points, ages, and the status of those points,
+ * update the vectors by removing elements with a invalid status.
+ *
+ * @param currentFeatures Current set of features we will need to update.
+ *
+ * @param status_all a vector with 1 If the point is valid, and 0 if it should be discarded.
+ */
+void deleteFeaturesWithFailureStatus(FeatureSet &currentFeatures,
+    const std::vector<bool> &status_all);
+
 
 /**
  * @brief Perform circular matching on 4 images and
@@ -322,9 +336,9 @@ std::vector<bool> findUnmovedPoints(const std::vector<cv::Point2f> &points_1,
  *
  * @param translation Matrix to store the estimated translation in.
  * 
- * @return The number of inliers in the best RANSAC transform
+ * @return Indicies of all inliers in the best RANSAC transform
  */
-int cameraToWorld(const cv::Mat &cameraProjection,
+cv::Mat cameraToWorld(const cv::Mat &cameraProjection,
                 const std::vector<cv::Point2f> &cameraPoints,
                 const cv::Mat &worldPoints, cv::Mat &rotation,
                 cv::Mat &translation);

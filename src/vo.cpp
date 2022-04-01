@@ -48,6 +48,7 @@ std::pair<cv::Mat, cv::Mat> VisualOdometry::stereo_callback(const cv::Mat &image
     // Set new images as old images.
     imageLeftT0_ = imageLeftT1_;
     imageRightT0_ = imageRightT1_;
+    dbg(currentVOFeatures.size());
     if (currentVOFeatures.size() < FEATURES_THRESHOLD) {
       // There are not enough features to fully determine
       // equations for pose estimation, so presume nothing and exit.
@@ -65,35 +66,42 @@ std::pair<cv::Mat, cv::Mat> VisualOdometry::stereo_callback(const cv::Mat &image
     // ---------------------
     // Tracking transfomation
     // ---------------------
-    dbg(pointsLeftT0.size());
 
     cv::Mat rotation = cv::Mat::eye(3, 3, CV_64F);
     cv::Mat translation = cv::Mat::zeros(3, 1, CV_64F);
-    int inliers = cameraToWorld(leftCameraProjection_,
+    cv::Mat inliers = cameraToWorld(leftCameraProjection_,
         pointsLeftT1, world_points_T0, rotation, translation);
-    dbg(inliers);
-    dbg(rotation);
-    dbg(translation);
-    // If we failed to converge
-    if (inliers < FEATURES_THRESHOLD) {
+    int n_inliers = inliers.size().height;
+    // std::vector<bool> is_ok(currentVOFeatures.size());
+    // for(int i = 0; i < n_inliers; i++){
+    //   is_ok[inliers.at<int>(i)] = true;
+    // }
+    // dbg(double(n_inliers) / currentVOFeatures.size());
+    // deleteFeaturesWithFailureStatus(currentVOFeatures, is_ok);
+    double translation_norm = cv::norm(translation);
+    cv::Mat rotation_rodrigues;
+    cv::Rodrigues(rotation, rotation_rodrigues);  
+    double angle = cv::norm(rotation_rodrigues, cv::NORM_L2);
+    // dbg(n_inliers);
+    if (n_inliers < FEATURES_THRESHOLD) {
       // There are not enough features to fully determine
       // equations for pose estimation, so presume nothing and exit.
       frame_id++;
+      // dbgstr("not enough features")
       return std::make_pair(no_translation, no_rotation);
     }
 
     // ------------------------------------------------
     // Integrating
     // ------------------------------------------------
-    double translation_norm = cv::norm(translation);
-    cv::Mat rotation_rodrigues;
-    cv::Rodrigues(rotation, rotation_rodrigues);  
-    double angle = cv::norm(rotation_rodrigues, cv::NORM_L2);
-    if(translation_norm < .01 || translation_norm > .1 || abs(angle) > 0.5) {
+    if(translation_norm > .1 || abs(angle) > 0.5){// || double(n_inliers) / currentVOFeatures.size() < .4) {
       dbgstr("Translation too suspicious, not updating");
+      // dbg(n_inliers);
+      // dbg(currentVOFeatures.size());
+      // dbg(translation_norm);
+      // dbg(abs(angle));
       return std::make_pair(no_translation, no_rotation);
     }
-    dbg(translation);
     cv::Mat xyz = frame_pose.col(3).clone();
     cv::Mat R = frame_pose(cv::Rect(0, 0, 3, 3));
     // publish
@@ -128,7 +136,19 @@ std::pair<cv::Mat, cv::Mat> VisualOdometry::stereo_callback(const cv::Mat &image
   // https://github.com/hjamal3/stereo_visual_odometry/blob/main/src/feature.cpp
   // --------------------------------
 
-void visual_odometry::deleteFeaturesWithFailureStatus(
+void visual_odometry::deleteFeaturesWithFailureStatus(FeatureSet &currentFeatures,
+    const std::vector<bool> &status_all){
+  unsigned int indexCorrection = 0;
+  for (unsigned int i = 0; i < status_all.size(); i++) {
+      if ((status_all.at(i) == 0)) {
+        currentFeatures.ages.erase(currentFeatures.ages.begin() + (i - indexCorrection));
+        currentFeatures.strengths.erase(currentFeatures.strengths.begin() + (i - indexCorrection));
+        currentFeatures.points.erase(currentFeatures.points.begin() + (i - indexCorrection));
+        indexCorrection++;
+      }
+    }
+}
+void visual_odometry::deleteFeaturesAndPointsWithFailureStatus(
     std::vector<cv::Point2f> &points0, std::vector<cv::Point2f> &points1,
     std::vector<cv::Point2f> &points2, std::vector<cv::Point2f> &points3,
     std::vector<cv::Point2f> &points4, FeatureSet &currentFeatures,
@@ -176,10 +196,8 @@ std::vector<bool> visual_odometry::circularMatching(const cv::Mat imgLeft_t0, co
     std::vector<uchar> status3;
     cv::Mat pyramid0;
     cv::Mat pyramid1;
-    // std::cout << "A" << std::endl;
     // cv::buildOpticalFlowPyramid(imgLeft_t0, pyramid0, winSize, 3);
     // cv::buildOpticalFlowPyramid(imgRight_t0, pyramid1, winSize, 3);
-    // std::cout << "A" << std::endl;
     // Sparse iterative version of the Lucas-Kanade optical flow in pyramids.
     
     calcOpticalFlowPyrLK(imgLeft_t0, imgRight_t0, pointsLeft_t0, pointsRight_t0, status0, err, winSize, 3, termcrit, cv::OPTFLOW_LK_GET_MIN_EIGENVALS, 0.01);
@@ -231,7 +249,7 @@ std::vector<bool> visual_odometry::findUnmovedPoints(const std::vector<cv::Point
   return status;
 }
 
-int visual_odometry::cameraToWorld(
+cv::Mat visual_odometry::cameraToWorld(
     const cv::Mat & cameraProjection,
     const std::vector<cv::Point2f> & cameraPoints, const cv::Mat & worldPoints,
     cv::Mat & rotation, cv::Mat & translation) {
@@ -242,7 +260,7 @@ int visual_odometry::cameraToWorld(
   cv::Mat intrinsic_matrix =
       (cv::Mat_<float>(3, 3) << cameraProjection.at<float>(0, 0), cameraProjection.at<float>(0, 1), cameraProjection.at<float>(0, 2),
         cameraProjection.at<float>(1, 0), cameraProjection.at<float>(1, 1), cameraProjection.at<float>(1, 2),
-        cameraProjection.at<float>(1, 1), cameraProjection.at<float>(1, 2), cameraProjection.at<float>(1, 3));
+        cameraProjection.at<float>(2, 0), cameraProjection.at<float>(2, 1), cameraProjection.at<float>(2, 2));
   int iterationsCount = 500; // number of Ransac iterations.
   float reprojectionError = .5; // maximum allowed distance to consider it an inlier.
   float confidence = 0.999; // RANSAC successful confidence.
@@ -255,7 +273,7 @@ int visual_odometry::cameraToWorld(
                       reprojectionError, confidence, inliers, flags);
 
   cv::Rodrigues(rvec, rotation);
-  return inliers.size().height;
+  return inliers;
 }
 
 void visual_odometry::matchingFeatures(
@@ -271,12 +289,13 @@ void visual_odometry::matchingFeatures(
   
   if(currentVOFeatures.size() < 4000) {
       // update feature set with detected features from the image.
-      currentVOFeatures.appendFeaturesFromImage(imageLeft_t0);
+      currentVOFeatures.appendFeaturesFromImage(imageLeft_t0, FAST_THRESHOLD);
   }
-  // if(currentVOFeatures.size() < 100) {
-  //     // Just append a bunch of random features
-  //     currentVOFeatures.appendGridOfFeatures(imageLeft_t0);
-  // }
+  if(currentVOFeatures.size() < FEATURES_THRESHOLD * 2) {
+      // Just append a bunch of random features
+      currentVOFeatures.appendGridOfFeatures(imageLeft_t0);
+      // currentVOFeatures.appendFeaturesFromImage(imageLeft_t0, FAST_THRESHOLD / 2);
+  }
 
   // --------------------------------------------------------
   // Feature tracking using KLT tracker, bucketing and circular matching.
@@ -284,12 +303,10 @@ void visual_odometry::matchingFeatures(
 
   pointsLeftT0 = currentVOFeatures.points;
   if (currentVOFeatures.points.size() == 0) return; // early exit
-  dbg(pointsLeftT0.size());
 
   std::vector<bool> matchingStatus = circularMatching(imageLeft_t0, imageRight_t0, imageLeft_t1, imageRight_t1, 
                     pointsLeftT0, pointsRightT0, pointsLeftT1, pointsRightT1, pointsLeftReturn_t0);
 
-  dbg(pointsLeftT0.size());
   // Check if circled back points are in range of original points.
   std::vector<bool> status = findUnmovedPoints(pointsLeftT0, pointsLeftReturn_t0, 1);
   // Only keep points that were matched correctly and are in the image bounds.
@@ -310,7 +327,7 @@ void visual_odometry::matchingFeatures(
     }
   }
 
-  deleteFeaturesWithFailureStatus(
+  deleteFeaturesAndPointsWithFailureStatus(
       pointsLeftT0, pointsRightT0, pointsLeftT1, pointsRightT1, pointsLeftReturn_t0,
       currentVOFeatures, status);
 

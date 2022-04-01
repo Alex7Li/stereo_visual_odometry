@@ -48,12 +48,12 @@ void Bucket::add_feature(const cv::Point2f point, const int age, const int stren
   }
 }
 
-std::vector<cv::Point2f> visual_odometry::featureDetectionFast(const cv::Mat image, std::vector<float> & response_strength) {
+std::vector<cv::Point2f> visual_odometry::featureDetectionFast(const cv::Mat image, const int fast_threshold, std::vector<float> & response_strength) {
   std::vector<cv::Point2f> points;
   std::vector<cv::KeyPoint> keypoints;
   bool nonmaxSuppression = true;
   try {
-    cv::FAST(image, keypoints, FAST_THRESHOLD, nonmaxSuppression);
+    cv::FAST(image, keypoints, fast_threshold, nonmaxSuppression);
   } catch(const cv::Exception& ex) {
     //maybe the image is empty or something?
     std::cout << ex.err << std::endl;
@@ -66,11 +66,11 @@ std::vector<cv::Point2f> visual_odometry::featureDetectionFast(const cv::Mat ima
   return points;
 }
 
-void FeatureSet::appendFeaturesFromImage(const cv::Mat & image) {
+void FeatureSet::appendFeaturesFromImage(const cv::Mat & image, const int fast_threshold) {
     /* Fast feature detection */
     std::vector<float>  response_strength;
     
-    std::vector<cv::Point2f>  points_new = featureDetectionFast(image, response_strength);
+    std::vector<cv::Point2f>  points_new = featureDetectionFast(image, fast_threshold, response_strength);
 
     points.insert(points.end(), points_new.begin(), points_new.end());
     std::vector<int>  ages_new(points_new.size(), 0);
@@ -80,8 +80,8 @@ void FeatureSet::appendFeaturesFromImage(const cv::Mat & image) {
 }
 void FeatureSet::appendGridOfFeatures(const cv::Mat & image) {
     /* Fast feature detection */
-    int point_rows = 2 * BUCKETS_ALONG_HEIGHT * int(sqrt(FEATURES_PER_BUCKET));
-    int point_cols = 2 * BUCKETS_ALONG_WIDTH * int(sqrt(FEATURES_PER_BUCKET));
+    int point_rows = BUCKETS_ALONG_HEIGHT * int(sqrt(FEATURES_PER_BUCKET));
+    int point_cols = BUCKETS_ALONG_WIDTH * int(sqrt(FEATURES_PER_BUCKET));
     int n_rows = image.rows;
     int n_cols = image.cols;
     std::vector<cv::Point2f>  points_new(point_rows * point_cols);

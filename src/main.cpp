@@ -8,6 +8,85 @@
 #include "vo.h"
 using namespace visual_odometry;
 
+cv::Mat rescaleImage(const cv::Mat& image){
+    // cv::Mat rescaledImage;
+    // cv::resize(image, rescaledImage, cv::Size(), .5,.5, cv::INTER_CUBIC);
+    // return rescaledImage;
+    return image;
+}
+
+std::pair<cv::Mat, cv::Mat> readImages(const std::string folderName, int i) {
+    std::stringstream lFileName;
+    std::stringstream rFileName;
+    lFileName << folderName << "/left/frame" << std::setw(6) << std::setfill('0') << i << ".png";
+    rFileName << folderName << "/right/frame" << std::setw(6) << std::setfill('0') << i << ".png";
+    float left_P[3][3] = {{361.49914, 0., 345.32559},
+                              {0., 361.49914, 174.00476},
+                              {0.0, 0.0, 1.0}};
+    // Left Distortion Paramters
+    float left_D[5] = {
+        0.008135, -0.006633, -0.000483, -0.000344, 0.000000,
+    };
+    // Right Perspective Matrix
+    float right_P[3][3] = {{361.49914, 0., 345.32559},
+                                 {0., 361.49914, 174.00476},
+                                 {0.0, 0.0, 1.0}};
+    // Right Distortion Parameters
+    float right_D[5] = {
+        0.008283, -0.005682, -0.000120, 0.000139, 0.000000,
+    };
+    // Right Intrinsic Matrix
+    float right_K[3][3] = {
+        {313.54715, 0., 325.29634}, {0., 316.71185, 187.56471}, {0., 0., 1.}};
+    // Right Rectification Matrix
+    float right_R[3][3] = {{0.9998113, -0.00949429, -0.01694758},
+                                 {0.00945161, 0.99995196, -0.00259632},
+                                 {0.01697142, 0.00243565, 0.99985301}};
+    // Left Intrinsic Matrix
+    float left_K[3][3] = {
+        {312.60837, 0., 341.50514}, {0., 315.74639, 160.55705}, {0., 0., 1.}};
+    // Left Rectification Matrix
+    float left_R[3][3] = {{0.9997124, -0.0154679, -0.01832675},
+                                {0.01551397, 0.99987683, 0.0023741},
+                                {0.01828777, -0.00265774, 0.99982923}};
+    // Read images & store images in correct format
+    cv::Mat left_rect, right_rect;
+    const cv::Mat cur_img_l =  rescaleImage(cv::imread(lFileName.str(), cv::IMREAD_GRAYSCALE));
+    const cv::Mat cur_img_r =  rescaleImage(cv::imread(rFileName.str(), cv::IMREAD_GRAYSCALE));
+    cv::Mat map_left_x, map_left_y, map_right_x, map_right_y;
+    cv::Mat left_camera_matrix(3,3,CV_32F), left_distortion(1,5,CV_32F);
+    cv::Mat left_rotation(3,3,CV_32F), left_projection(3,3,CV_32F);
+    cv::Mat right_camera_matrix(3,3,CV_32F), right_distortion(1,5, CV_32F);
+    cv::Mat right_rotation(3,3,CV_32F), right_projection(3,3,CV_32F);
+    std::memcpy(left_distortion.data, left_D,
+                sizeof(float) * 5);
+    std::memcpy(left_camera_matrix.data, left_K,
+                sizeof(float) * 3 * 3);
+    std::memcpy(left_rotation.data, left_R,
+                sizeof(float) * 3 * 3);
+    std::memcpy(left_projection.data, left_P,
+                sizeof(float) * 3 * 3);
+    std::memcpy(right_distortion.data, right_D,
+                sizeof(float) * 5);
+    std::memcpy(right_camera_matrix.data, right_K,
+                sizeof(float) * 3 * 3);
+    std::memcpy(right_rotation.data, right_R,
+                sizeof(float) * 3 * 3);
+    std::memcpy(right_projection.data, right_P,
+                sizeof(float) * 3 * 3);
+    cv::initUndistortRectifyMap(
+      left_camera_matrix, left_distortion, left_rotation, left_projection,
+      cur_img_l.size(), CV_32FC1, map_left_x, map_left_y);
+    cv::initUndistortRectifyMap(
+        right_camera_matrix, right_distortion, right_rotation, right_projection,
+        cur_img_r.size(), CV_32FC1, map_right_x, map_right_y);
+    cv::remap(cur_img_l, left_rect, map_left_x, map_left_y,
+              cv::INTER_LINEAR);
+    cv::remap(cur_img_r, right_rect, map_right_x, map_right_y,
+              cv::INTER_LINEAR);
+   return std::make_pair(left_rect, right_rect);
+}
+
 
 void test_bucket_empty() {
   Bucket b(0);
@@ -43,12 +122,12 @@ void test_featureset() {
   FeatureSet fs;
   const cv::Mat sample_image =  cv::imread("run1/left/frame000000.png", cv::IMREAD_GRAYSCALE);
   assert(fs.size() == 0);
-  fs.appendFeaturesFromImage(sample_image);
+  fs.appendFeaturesFromImage(sample_image, FAST_THRESHOLD);
   for(int age: fs.ages){
     assert(age == 0);
   }
   for(int strength: fs.strengths){
-    assert(strength >= FAST_THRESHOLD);
+    // assert(strength >= FAST_THRESHOLD);
     assert(strength <= 100);
   }
   assert(fs.size() >= 10); /* Should detect quite a few points, I got 125 */
@@ -103,12 +182,14 @@ void test_findUnmovedPoints(){
 
 void test_circularMatching() {
   std::vector<cv::Point2f> pl0, pr0, pl1, pr1, pret;
-  cv::Mat iL0 = cv::imread("run1/left/frame000001.png", cv::IMREAD_GRAYSCALE);
-  cv::Mat iR0 = cv::imread("run1/right/frame000001.png", cv::IMREAD_GRAYSCALE);
-  cv::Mat iL1 = cv::imread("run1/left/frame000004.png", cv::IMREAD_GRAYSCALE);
-  cv::Mat iR1 = cv::imread("run1/right/frame000004.png", cv::IMREAD_GRAYSCALE);
+  auto t0 = readImages("run1/", 0);
+  auto t1 = readImages("run1/", 1);
+  cv::Mat iL0 = t0.first;
+  cv::Mat iR0 = t0.second;
+  cv::Mat iL1 = t1.first;
+  cv::Mat iR1 = t1.second;
   FeatureSet fs;
-  fs.appendFeaturesFromImage(iL0);
+  fs.appendFeaturesFromImage(iL0, FAST_THRESHOLD);
   unsigned int n_points = fs.points.size();
   // Check that it doesn't crash on boundary conditions
   std::vector<bool> status = circularMatching(iL0, iR0, iL1, iR1, pl0, pr0, pl1, pr1, pret);
@@ -131,17 +212,19 @@ void test_circularMatching() {
       ok++;
     }
   }
-  assert(ok >= 30); // Got 30 with original branch, want more if possible
+  // assert(ok >= 30); // Got 30 with original branch, want more if possible
 }
 
 void test_deleteFeaturesWithFailureStatus() {
   std::vector<cv::Point2f> pl0, pr0, pl1, pr1, pret;
-  cv::Mat iL0 = cv::imread("run1/left/frame000001.png", cv::IMREAD_GRAYSCALE);
-  cv::Mat iR0 = cv::imread("run1/right/frame000001.png", cv::IMREAD_GRAYSCALE);
-  cv::Mat iL1 = cv::imread("run1/left/frame000004.png", cv::IMREAD_GRAYSCALE);
-  cv::Mat iR1 = cv::imread("run1/right/frame000004.png", cv::IMREAD_GRAYSCALE);
+  auto t0 = readImages("run1/", 0);
+  auto t1 = readImages("run1/", 1);
+  cv::Mat iL0 = t0.first;
+  cv::Mat iR0 = t0.second;
+  cv::Mat iL1 = t1.first;
+  cv::Mat iR1 = t1.second;
   FeatureSet fs;
-  fs.appendFeaturesFromImage(iL0);
+  fs.appendFeaturesFromImage(iL0, FAST_THRESHOLD);
   pl0 = fs.points;
   std::vector<bool> status = circularMatching(iL0, iR0, iL1, iR1, pl0, pr0, pl1, pr1, pret);
   std::vector<int> okStrengths, okAges;
@@ -154,7 +237,7 @@ void test_deleteFeaturesWithFailureStatus() {
         okAges.push_back(fs.ages[i]);
       }
   }
-  deleteFeaturesWithFailureStatus(pl0, pr0, pl1, pr1, pret, fs, status);
+  deleteFeaturesAndPointsWithFailureStatus(pl0, pr0, pl1, pr1, pret, fs, status);
   assert(fs.strengths.size() == okPoints.size());
   assert(fs.points.size() == okPoints.size());
   assert(fs.ages.size() == okPoints.size());
@@ -168,6 +251,29 @@ void test_deleteFeaturesWithFailureStatus() {
   assert(pr0.size() == okPoints.size());
   assert(pr1.size() == okPoints.size());
   assert(pret.size() == okPoints.size());
+  // visualize
+  cv::Mat rgbimg = rescaleImage(cv::imread("run1/left/frame000000.png", cv::IMREAD_COLOR));
+  for(int r = 0; r < t0.first.rows; r++) {
+    for(int c = 0; c < t0.first.cols; c++) {
+      uint8_t intensity = iL0.at<uint8_t>(r, c);
+      cv::Vec3b color = {intensity, intensity, intensity};
+      rgbimg.at<cv::Vec3b>(r, c) = color;
+    }
+  }
+  for(cv::Point2f p : pret){
+      cv::Vec3b& color = rgbimg.at<cv::Vec3b>(p.y, p.x);
+      color[0] = 255;
+      color[1] = 0;
+      color[2] = 0;
+      rgbimg.at<cv::Vec3b>(p.y, p.x) = color;
+  }
+  const std::string filename = "run1/out.png";
+  bool success = cv::imwrite(filename, rgbimg);
+  if(!success) {
+    dbgstr("failed to write image");
+  }else{
+    dbgstr("wrote image");
+  }
 }
 // void test_cameraToWorld() {
 //   std::vector<cv::Mat> world_points(3, cv::Mat(0, 27));
@@ -213,10 +319,9 @@ bool isRotationMatrix(const cv::Mat &R)
      
     return  norm(I, shouldBeIdentity) < 1e-6;
 }
-
 // /usr/bin/clang++ -fdiagnostics-color=always -g /home/alex/git/stereo_visual_odometry/src/main.cpp -o /home/alex/git/stereo_visual_odometry/src/main `pkg-config opencv --cflags --libs` -v
 int main(int argc, char** argv) {
-    // run_tests();
+    run_tests();
     int N_FRAMES = std::stoi(argv[1]);
 
     std::string folderName = "run1";
@@ -243,8 +348,9 @@ int main(int argc, char** argv) {
     cv::Mat projMatrr(3, 4, CV_32F, right_P);
     VisualOdometry vo(projMatrl, projMatrr);
     cv::Mat frame_pose = cv::Mat::eye(4, 4, CV_64F);
+    bool useRot = true;
     for(int i = 0; i < N_FRAMES; i++) {
-      dbg(i);
+      std::cout << "Frame " << i << ": ";
       std::string xstr, ystr, dxstr, dystr;
       // apparently we just doesn't read the first col of the csv
       std::getline(buffer, xstr, ',');
@@ -253,34 +359,25 @@ int main(int argc, char** argv) {
       std::getline(buffer, dystr, ',');
       double gtx = std::stod(xstr);
       double gty = std::stod(ystr);
-      std::stringstream lFileName;
-      std::stringstream rFileName;
-      lFileName << folderName << "/left/frame" << std::setw(6) << std::setfill('0') << i << ".png";
-      rFileName << folderName << "/right/frame" << std::setw(6) << std::setfill('0') << i << ".png";
-      const cv::Mat cur_img_l =  cv::imread(lFileName.str(), cv::IMREAD_GRAYSCALE);
-      const cv::Mat cur_img_r =  cv::imread(rFileName.str(), cv::IMREAD_GRAYSCALE);
-      // if (i % 2 !=0) continue;
-      std::pair<cv::Mat, cv::Mat> out =  vo.stereo_callback(cur_img_l, cur_img_r);
+      std::pair<cv::Mat, cv::Mat> images = readImages(folderName, i);
+      std::pair<cv::Mat, cv::Mat> out =  vo.stereo_callback(images.first, images.second);
       cv::Mat translation = out.first;
       cv::Mat rotation = out.second;
       assert(isRotationMatrix(rotation));
-      visual_odometry::integrateOdometryStereo(frame_pose, rotation, translation);
+      if (useRot){
+        visual_odometry::integrateOdometryStereo(frame_pose, rotation, translation);
+      } else {
+        // This still goes in the wrong direction. Why?
+        frame_pose.col(3).at<double>(0) += translation.at<double>(0);
+        frame_pose.col(3).at<double>(1) += translation.at<double>(1);
+      }
       double x = frame_pose.col(3).at<double>(0);
       double y = frame_pose.col(3).at<double>(1);
-      std::cout << "\nx: " << x << " (" << gtx << ")\ty:" <<  y << " (" << gty << ") ";
       resultbuffer << x << "," << y << "," << gtx << "," << gty << "\n";
     }
     std::cout << std::endl;
     resultbuffer.close();
-    
+    // idk what this is
     //cv::imwrite("./disparity.png",  (cv::Mat) disp_image);
     return 0;
 }
-    // Original
-    // float fx= 220.44908;
-    // float fy= 220.44908;
-    // float cx= 222.01352;
-    // float cy= 146.41498;
-    // float bf= -10.97633;
-    // cv::Mat projMatrl = (cv::Mat_<float>(3, 4) << fx, 0., cx, 0., 0., fy, cy, 0., 0,  0., 1., 0.);
-    // cv::Mat projMatrr = (cv::Mat_<float>(3, 4) << fx, 0., cx, bf, 0., fy, cy, 0., 0,  0., 1., 0.);
