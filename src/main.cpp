@@ -8,18 +8,17 @@
 #include "vo.h"
 using namespace visual_odometry;
 
-cv::Mat rescaleImage(const cv::Mat& image){
-    // cv::Mat rescaledImage;
-    // cv::resize(image, rescaledImage, cv::Size(), .5,.5, cv::INTER_CUBIC);
-    // return rescaledImage;
-    return image;
-}
-
 std::pair<cv::Mat, cv::Mat> readImages(const std::string folderName, int i) {
     std::stringstream lFileName;
     std::stringstream rFileName;
-    lFileName << folderName << "/left/frame" << std::setw(6) << std::setfill('0') << i << ".png";
-    rFileName << folderName << "/right/frame" << std::setw(6) << std::setfill('0') << i << ".png";
+    int zeros = 6;
+    std::string end = ".png";
+    if (folderName == "rand_feats"){
+      zeros = 4;
+      end = ".jpg";
+    }
+    lFileName << folderName << "/left/frame" << std::setw(zeros) << std::setfill('0') << i << end;
+    rFileName << folderName << "/right/frame" << std::setw(zeros) << std::setfill('0') << i << end;
     float left_P[3][3] = {{361.49914, 0., 345.32559},
                               {0., 361.49914, 174.00476},
                               {0.0, 0.0, 1.0}};
@@ -51,8 +50,8 @@ std::pair<cv::Mat, cv::Mat> readImages(const std::string folderName, int i) {
                                 {0.01828777, -0.00265774, 0.99982923}};
     // Read images & store images in correct format
     cv::Mat left_rect, right_rect;
-    const cv::Mat cur_img_l =  rescaleImage(cv::imread(lFileName.str(), cv::IMREAD_GRAYSCALE));
-    const cv::Mat cur_img_r =  rescaleImage(cv::imread(rFileName.str(), cv::IMREAD_GRAYSCALE));
+    const cv::Mat cur_img_l =  cv::imread(lFileName.str(), cv::IMREAD_GRAYSCALE);
+    const cv::Mat cur_img_r =  cv::imread(rFileName.str(), cv::IMREAD_GRAYSCALE);
     cv::Mat map_left_x, map_left_y, map_right_x, map_right_y;
     cv::Mat left_camera_matrix(3,3,CV_32F), left_distortion(1,5,CV_32F);
     cv::Mat left_rotation(3,3,CV_32F), left_projection(3,3,CV_32F);
@@ -84,7 +83,10 @@ std::pair<cv::Mat, cv::Mat> readImages(const std::string folderName, int i) {
               cv::INTER_LINEAR);
     cv::remap(cur_img_r, right_rect, map_right_x, map_right_y,
               cv::INTER_LINEAR);
-   return std::make_pair(left_rect, right_rect);
+   // It's already rectified!
+   return std::make_pair(cur_img_l, cur_img_r);
+   // It's not rectified :(
+  //  return std::make_pair(left_rect, right_rect);
 }
 
 
@@ -123,7 +125,7 @@ void test_featureset() {
   const cv::Mat sample_image =  cv::imread("run1/left/frame000000.png", cv::IMREAD_GRAYSCALE);
   assert(fs.size() == 0);
   fs.appendFeaturesFromImage(sample_image, FAST_THRESHOLD);
-  for(int age: fs.ages){
+  for(int age: fs.ages) {
     assert(age == 0);
   }
   for(int strength: fs.strengths){
@@ -174,7 +176,7 @@ void test_findUnmovedPoints(){
     points1.push_back({ float(i), float(i)});
     points2.push_back({ float(i) + !(i % 5), float(i) + !(i % 7)});
   }
-  std::vector<bool> okLocations = findUnmovedPoints(points1, points2, .5);
+  std::vector<bool> okLocations = findClosePoints(points1, points2, .5);
   for(int i = 0; i < 35; i++){
     assert(okLocations[i] == ((i % 5) && (i % 7)));
   }
@@ -252,7 +254,7 @@ void test_deleteFeaturesWithFailureStatus() {
   assert(pr1.size() == okPoints.size());
   assert(pret.size() == okPoints.size());
   // visualize
-  cv::Mat rgbimg = rescaleImage(cv::imread("run1/left/frame000000.png", cv::IMREAD_COLOR));
+  cv::Mat rgbimg = cv::imread("run1/left/frame000000.png", cv::IMREAD_COLOR);
   for(int r = 0; r < t0.first.rows; r++) {
     for(int c = 0; c < t0.first.cols; c++) {
       uint8_t intensity = iL0.at<uint8_t>(r, c);
@@ -275,16 +277,27 @@ void test_deleteFeaturesWithFailureStatus() {
     dbgstr("wrote image");
   }
 }
-// void test_cameraToWorld() {
-//   std::vector<cv::Mat> world_points(3, cv::Mat(0, 27));
-//   for(unsigned int i = -1; i <= 1; i++){
-//     for(unsigned int j = -1; j <= 1; j++){
-//       for(unsigned int k = -1; k <= 1; k++){
-//         world_points[0].push_back(i);
-//       }
-//     }
-//   }
-// }
+void test_cameraToWorld() {
+  cv::Mat world_points(cv::Size(27, 3), CV_64F);
+  for(unsigned int i = -1; i <= 1; i++){
+    for(unsigned int j = -1; j <= 1; j++){
+      for(unsigned int k = -1; k <= 1; k++){
+        int ind = i + 1 + ( j + 1) * 3 + (k + 1) * 9;
+        world_points.at<double>(ind, 0)= (double)i;
+        world_points.at<double>(ind, 1)= (double)j;
+        world_points.at<double>(ind, 2) = (double)k;
+      }
+    }
+  }
+
+  cv::Mat rotation = cv::Mat::eye(3, 3, CV_64F);
+  cv::Mat translation = cv::Mat::zeros(3, 1, CV_64F);
+  // cv::Mat inliers = cameraToWorld(leftCameraProjection_,
+  //     pointsLeftT1, world_points, rotation, translation);
+}
+void test_goes_forward() {
+
+}
 
 void run_tests() {
   std::cout << "TEST BUCKET EMPTY" << std::endl;
@@ -319,24 +332,30 @@ bool isRotationMatrix(const cv::Mat &R)
      
     return  norm(I, shouldBeIdentity) < 1e-6;
 }
+
 // /usr/bin/clang++ -fdiagnostics-color=always -g /home/alex/git/stereo_visual_odometry/src/main.cpp -o /home/alex/git/stereo_visual_odometry/src/main `pkg-config opencv --cflags --libs` -v
 int main(int argc, char** argv) {
-    run_tests();
+  // extrinsics with kalibr
+    // run_tests();
     int N_FRAMES = std::stoi(argv[1]);
-
-    std::string folderName = "run1";
-    std::ifstream ground_truth;
-    ground_truth.open(folderName + "/gt.csv");
+    std::string folderName = "run1";//"rand_feats";
+    bool has_ground_truth = true;
+    bool useRot = true;
+    // std::string folderName = "run1";
     std::stringstream buffer;
-    buffer << ground_truth.rdbuf();
-    ground_truth.close();
+    if(has_ground_truth) {
+      std::ifstream ground_truth;
+      ground_truth.open(folderName + "/gt.csv");
+      buffer << ground_truth.rdbuf();
+      ground_truth.close();
+      std::string lastline;
+      std::getline(buffer, lastline);
+      std::getline(buffer, lastline, ',');
+    }
 
-    std::string lastline;
-    std::getline(buffer, lastline);
-    std::getline(buffer, lastline, ',');
     std::ofstream resultbuffer;
     resultbuffer.open (folderName + "/result.csv");
-    resultbuffer << "x," << "y," << "gtx," << "gty" << "\n";
+    resultbuffer << "x,y,z,gtx,gty" << "\n";
 
     float left_P[3][4] = {{322.11376, 0.0, 327.47336, 0.0},
                           {0.0, 322.11376, 176.33722, 0.0},
@@ -347,18 +366,21 @@ int main(int argc, char** argv) {
     cv::Mat projMatrl(3, 4, CV_32F, left_P);
     cv::Mat projMatrr(3, 4, CV_32F, right_P);
     VisualOdometry vo(projMatrl, projMatrr);
-    cv::Mat frame_pose = cv::Mat::eye(4, 4, CV_64F);
-    bool useRot = true;
+    cv::Mat frame_pose = vo.frame_pose;
     for(int i = 0; i < N_FRAMES; i++) {
       std::cout << "Frame " << i << ": ";
-      std::string xstr, ystr, dxstr, dystr;
-      // apparently we just doesn't read the first col of the csv
-      std::getline(buffer, xstr, ',');
-      std::getline(buffer, ystr, ',');
-      std::getline(buffer, dxstr, ',');
-      std::getline(buffer, dystr, ',');
-      double gtx = std::stod(xstr);
-      double gty = std::stod(ystr);
+      double gtx = 0;
+      double gty = 0;
+      if (has_ground_truth) {
+        std::string xstr, ystr, dxstr, dystr;
+        // apparently we just doesn't read the first col of the csv
+        std::getline(buffer, xstr, ',');
+        std::getline(buffer, ystr, ',');
+        std::getline(buffer, dxstr, ',');
+        std::getline(buffer, dystr, ',');
+        gtx = std::stod(xstr);
+        gty = std::stod(ystr);
+      }
       std::pair<cv::Mat, cv::Mat> images = readImages(folderName, i);
       std::pair<cv::Mat, cv::Mat> out =  vo.stereo_callback(images.first, images.second);
       cv::Mat translation = out.first;
@@ -370,10 +392,12 @@ int main(int argc, char** argv) {
         // This still goes in the wrong direction. Why?
         frame_pose.col(3).at<double>(0) += translation.at<double>(0);
         frame_pose.col(3).at<double>(1) += translation.at<double>(1);
+        frame_pose.col(3).at<double>(2) += translation.at<double>(2);
       }
       double x = frame_pose.col(3).at<double>(0);
       double y = frame_pose.col(3).at<double>(1);
-      resultbuffer << x << "," << y << "," << gtx << "," << gty << "\n";
+      double z = frame_pose.col(3).at<double>(2);
+      resultbuffer << x << "," << y << "," << z << "," << gtx << "," << gty << "\n";
     }
     std::cout << std::endl;
     resultbuffer.close();

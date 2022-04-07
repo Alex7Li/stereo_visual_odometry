@@ -88,7 +88,7 @@ const int BUCKETS_ALONG_WIDTH = 26;
 /**
  * @brief Maximum number of features per bucket
  */
-const int FEATURES_PER_BUCKET = 4;
+const int FEATURES_PER_BUCKET = 1;
 
 /**
  * @brief Minimum number of features before using VO
@@ -96,13 +96,19 @@ const int FEATURES_PER_BUCKET = 4;
 const int FEATURES_THRESHOLD = 20;
 
 /**
+ * @brief Minimum number of features before appending
+ * random features in a grid pattern
+ */
+const int GRID_THRESHOLD = 100;
+/**
  * @brief Ignore all features that have been around but not detected
  * for this many frames.
  */
-const int AGE_THRESHOLD = 10;
+const int AGE_THRESHOLD = 20;
 
 /**
- * @brief Minimum confidence for the robot to report 
+ * @brief Minimum confidence for the robot to report a feature
+ * detection
  */
 const int FAST_THRESHOLD = 10;
 
@@ -216,12 +222,13 @@ private:
   cv::Mat imageRightT1_, imageLeftT1_;
 
   /* Initial pose variables. */
-  cv::Mat frame_pose = cv::Mat::eye(4, 4, CV_64F);
 
   /* Set of features currently tracked. */
   FeatureSet currentVOFeatures;
 
 public:
+  // Just public for testing
+  cv::Mat frame_pose = cv::Mat::eye(4, 4, CV_64F);
   /**
    * @brief Construct a new Visual Odometry object
    *
@@ -318,9 +325,9 @@ std::vector<bool> circularMatching(const cv::Mat img_0, const cv::Mat img_1,
  *
  * @return a vector v where v[i] is true iff |points_1[i] - points_2[i]| <= threshold
  */
-std::vector<bool> findUnmovedPoints(const std::vector<cv::Point2f> &points_1,
+std::vector<bool> findClosePoints(const std::vector<cv::Point2f> &points_1,
                      const std::vector<cv::Point2f> &points_2,
-                     const float threshold);
+                     float threshold);
 
 /**
  * @brief Compute the translation and rotation that needs to occur
@@ -338,7 +345,7 @@ std::vector<bool> findUnmovedPoints(const std::vector<cv::Point2f> &points_1,
  * 
  * @return Indicies of all inliers in the best RANSAC transform
  */
-cv::Mat cameraToWorld(const cv::Mat &cameraProjection,
+std::pair<cv::Mat, bool> cameraToWorld(const cv::Mat &cameraProjection,
                 const std::vector<cv::Point2f> &cameraPoints,
                 const cv::Mat &worldPoints, cv::Mat &rotation,
                 cv::Mat &translation);
@@ -349,7 +356,7 @@ cv::Mat cameraToWorld(const cv::Mat &cameraProjection,
  * 
  * Calls many of the above functions in a pipeline.
  * appendFeaturesFromImage -> filterByBucketLocation -> circularMatching -> 
- * deleteFeaturesWithFailureStatus -> findUnmovedPoints -> removeInvalidPoints
+ * deleteFeaturesWithFailureStatus -> findClosePoints -> removeInvalidPoints
  * 
  * @param image[(Left)|(Right)][01]: Images from the left/right cameras at the last/current timestep.
  * @param currentVOFeatures: The set of currently tracked features, stored as a position in the LeftT0 image, will
@@ -357,7 +364,7 @@ cv::Mat cameraToWorld(const cv::Mat &cameraProjection,
  * @param points[(Left)|(Right)][01]: references to 4 empty vectors of points to fill up with feature positions.
  */
 void matchingFeatures(const cv::Mat &imageLeftT0, const cv::Mat &imageRightT0,
-                      const cv::Mat &imageLeftT1, const cv::Mat &imageRightT1,
+                      cv::Mat &imageLeftT1, cv::Mat &imageRightT1,
                       FeatureSet &currentVOFeatures,
                       std::vector<cv::Point2f> &pointsLeftT0,
                       std::vector<cv::Point2f> &pointsRightT0,

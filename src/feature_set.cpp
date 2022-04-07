@@ -78,6 +78,7 @@ void FeatureSet::appendFeaturesFromImage(const cv::Mat & image, const int fast_t
     strengths.insert(strengths.end(), response_strength.begin(), response_strength.end());
     filterByBucketLocation(image);
 }
+
 void FeatureSet::appendGridOfFeatures(const cv::Mat & image) {
     /* Fast feature detection */
     int point_rows = BUCKETS_ALONG_HEIGHT * int(sqrt(FEATURES_PER_BUCKET));
