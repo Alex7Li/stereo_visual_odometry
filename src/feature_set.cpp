@@ -65,11 +65,16 @@ std::vector<cv::Point2f> visual_odometry::featureDetectionFast(const cv::Mat ima
   }
   return points;
 }
+void FeatureSet::clear() {
+  points.clear();
+  strengths.clear();
+  ages.clear();
+}
 
 void FeatureSet::appendFeaturesFromImage(const cv::Mat & image, const int fast_threshold) {
     /* Fast feature detection */
     std::vector<float>  response_strength;
-    
+
     std::vector<cv::Point2f>  points_new = featureDetectionFast(image, fast_threshold, response_strength);
 
     points.insert(points.end(), points_new.begin(), points_new.end());
@@ -81,8 +86,8 @@ void FeatureSet::appendFeaturesFromImage(const cv::Mat & image, const int fast_t
 
 void FeatureSet::appendGridOfFeatures(const cv::Mat & image) {
     /* Fast feature detection */
-    int point_rows = BUCKETS_ALONG_HEIGHT * int(sqrt(FEATURES_PER_BUCKET));
-    int point_cols = BUCKETS_ALONG_WIDTH * int(sqrt(FEATURES_PER_BUCKET));
+    int point_rows = 25;
+    int point_cols = 40;
     int n_rows = image.rows;
     int n_cols = image.cols;
     std::vector<cv::Point2f>  points_new(point_rows * point_cols);

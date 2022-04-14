@@ -11,13 +11,13 @@ using namespace visual_odometry;
 std::pair<cv::Mat, cv::Mat> readImages(const std::string folderName, int i) {
     std::stringstream lFileName;
     std::stringstream rFileName;
-    int zeros = 6;
-    std::string end = ".png";
-    if (folderName == "rand_feats"){
-      zeros = 4;
-      end = ".jpg";
+    int zeros = 4;
+    std::string end = ".jpg";
+    if (folderName == "run1"){
+    zeros = 6;
+    end = ".png";
     }
-    lFileName << folderName << "/left/frame" << std::setw(zeros) << std::setfill('0') << i << end;
+    lFJust append a bunch of random featuresileName << folderName << "/left/frame" << std::setw(zeros) << std::setfill('0') << i << end;
     rFileName << folderName << "/right/frame" << std::setw(zeros) << std::setfill('0') << i << end;
     float left_P[3][3] = {{361.49914, 0., 345.32559},
                               {0., 361.49914, 174.00476},
@@ -37,13 +37,13 @@ std::pair<cv::Mat, cv::Mat> readImages(const std::string folderName, int i) {
     // Right Intrinsic Matrix
     float right_K[3][3] = {
         {313.54715, 0., 325.29634}, {0., 316.71185, 187.56471}, {0., 0., 1.}};
+    // Left Intrinsic Matrix
+    float left_K[3][3] = {
+        {312.60837, 0., 341.50514}, {0., 315.74639, 160.55705}, {0., 0., 1.}};
     // Right Rectification Matrix
     float right_R[3][3] = {{0.9998113, -0.00949429, -0.01694758},
                                  {0.00945161, 0.99995196, -0.00259632},
                                  {0.01697142, 0.00243565, 0.99985301}};
-    // Left Intrinsic Matrix
-    float left_K[3][3] = {
-        {312.60837, 0., 341.50514}, {0., 315.74639, 160.55705}, {0., 0., 1.}};
     // Left Rectification Matrix
     float left_R[3][3] = {{0.9997124, -0.0154679, -0.01832675},
                                 {0.01551397, 0.99987683, 0.0023741},
@@ -194,94 +194,87 @@ void test_circularMatching() {
   fs.appendFeaturesFromImage(iL0, FAST_THRESHOLD);
   unsigned int n_points = fs.points.size();
   // Check that it doesn't crash on boundary conditions
-  std::vector<bool> status = circularMatching(iL0, iR0, iL1, iR1, pl0, pr0, pl1, pr1, pret);
-  assert(status.size() == 0);
+  circularMatching(iL0, iR0, iL1, iR1, pl0, pr0, pl1, pr1, pret, fs);
   pl0.push_back(fs.points[0]);
-  status = circularMatching(iL0, iR0, iL1, iR1, pl0, pr0, pl1, pr1, pret);
-  assert(status.size() == 1);
+  circularMatching(iL0, iR0, iL1, iR1, pl0, pr0, pl1, pr1, pret, fs);
   // run
   pl0 = fs.points;
-  status = circularMatching(iL0, iR0, iL1, iR1, pl0, pr0, pl1, pr1, pret);
-  assert(status.size() == n_points);
+  circularMatching(iL0, iR0, iL1, iR1, pl0, pr0, pl1, pr1, pret, fs);
   assert(pl0.size() == n_points);
   assert(pl1.size() == n_points);
   assert(pr0.size() == n_points);
   assert(pr1.size() == n_points);
   assert(pret.size() == n_points);
-  int ok = 0;
-  for(unsigned int i = 0; i < status.size(); i++){
-    if(status[i]){
-      ok++;
-    }
-  }
   // assert(ok >= 30); // Got 30 with original branch, want more if possible
 }
 
-void test_deleteFeaturesWithFailureStatus() {
-  std::vector<cv::Point2f> pl0, pr0, pl1, pr1, pret;
-  auto t0 = readImages("run1/", 0);
-  auto t1 = readImages("run1/", 1);
-  cv::Mat iL0 = t0.first;
-  cv::Mat iR0 = t0.second;
-  cv::Mat iL1 = t1.first;
-  cv::Mat iR1 = t1.second;
-  FeatureSet fs;
-  fs.appendFeaturesFromImage(iL0, FAST_THRESHOLD);
-  pl0 = fs.points;
-  std::vector<bool> status = circularMatching(iL0, iR0, iL1, iR1, pl0, pr0, pl1, pr1, pret);
-  std::vector<int> okStrengths, okAges;
-  std::vector<cv::Point2f> okPoints;
-  for(unsigned int i = 0; i < status.size(); i++){
-      fs.ages[i] = i;
-      if(status[i]){
-        okPoints.push_back(fs.points[i]);
-        okStrengths.push_back(fs.strengths[i]);
-        okAges.push_back(fs.ages[i]);
-      }
-  }
-  deleteFeaturesAndPointsWithFailureStatus(pl0, pr0, pl1, pr1, pret, fs, status);
-  assert(fs.strengths.size() == okPoints.size());
-  assert(fs.points.size() == okPoints.size());
-  assert(fs.ages.size() == okPoints.size());
-  for(unsigned int i = 0; i < okPoints.size(); i++){
-    assert(okPoints[i] == fs.points[i]);
-    assert(okStrengths[i] == fs.strengths[i]);
-    assert(okAges[i] == fs.ages[i]);
-  }
-  assert(pl0.size() == okPoints.size());
-  assert(pl1.size() == okPoints.size());
-  assert(pr0.size() == okPoints.size());
-  assert(pr1.size() == okPoints.size());
-  assert(pret.size() == okPoints.size());
-  // visualize
-  cv::Mat rgbimg = cv::imread("run1/left/frame000000.png", cv::IMREAD_COLOR);
-  for(int r = 0; r < t0.first.rows; r++) {
-    for(int c = 0; c < t0.first.cols; c++) {
-      uint8_t intensity = iL0.at<uint8_t>(r, c);
-      cv::Vec3b color = {intensity, intensity, intensity};
-      rgbimg.at<cv::Vec3b>(r, c) = color;
-    }
-  }
-  for(cv::Point2f p : pret){
-      cv::Vec3b& color = rgbimg.at<cv::Vec3b>(p.y, p.x);
-      color[0] = 255;
-      color[1] = 0;
-      color[2] = 0;
-      rgbimg.at<cv::Vec3b>(p.y, p.x) = color;
-  }
-  const std::string filename = "run1/out.png";
-  bool success = cv::imwrite(filename, rgbimg);
-  if(!success) {
-    dbgstr("failed to write image");
-  }else{
-    dbgstr("wrote image");
-  }
-}
+// void test_deleteFeaturesWithFailureStatus() {
+//   std::vector<cv::Point2f> pl0, pr0, pl1, pr1, pret;
+//   auto t0 = readImages("run1/", 0);
+//   auto t1 = readImages("run1/", 1);
+//   cv::Mat iL0 = t0.first;
+//   cv::Mat iR0 = t0.second;
+//   cv::Mat iL1 = t1.first;
+//   cv::Mat iR1 = t1.second;
+//   FeatureSet fs;
+//   fs.appendFeaturesFromImage(iL0, FAST_THRESHOLD);
+//   pl0 = fs.points;
+//   circularMatching(iL0, iR0, iL1, iR1, pl0, pr0, pl1, pr1, pret);
+//   std::vector<int> okStrengths, okAges;
+//   std::vector<cv::Point2f> okPoints;
+//   for(unsigned int i = 0; i < status.size(); i++){
+//       fs.ages[i] = i;
+//       if(status[i]){
+//         okPoints.push_back(fs.points[i]);
+//         okStrengths.push_back(fs.strengths[i]);
+//         okAges.push_back(fs.ages[i]);
+//       }
+//   }
+//   std::vector<std::vector<cv::Point2f>> v = {pl0, pr0, pl1, pr1};
+//   deleteFeaturesAndPointsWithFailureStatus(v, pret, fs, status);
+//   assert(fs.strengths.size() == okPoints.size());
+//   assert(fs.points.size() == okPoints.size());
+//   assert(fs.ages.size() == okPoints.size());
+//   for(unsigned int i = 0; i < okPoints.size(); i++){
+//     assert(okPoints[i] == fs.points[i]);
+//     assert(okStrengths[i] == fs.strengths[i]);
+//     assert(okAges[i] == fs.ages[i]);
+//   }
+//   assert(pl0.size() == okPoints.size());
+//   assert(pl1.size() == okPoints.size());
+//   assert(pr0.size() == okPoints.size());
+//   assert(pr1.size() == okPoints.size());
+//   assert(pret.size() == okPoints.size());
+//   // visualize
+//   cv::Mat rgbimg = cv::imread("run1/left/frame000000.png", cv::IMREAD_COLOR);
+//   for(int r = 0; r < t0.first.rows; r++) {
+//     for(int c = 0; c < t0.first.cols; c++) {
+//       uint8_t intensity = iL0.at<uint8_t>(r, c);
+//       cv::Vec3b color = {intensity, intensity, intensity};
+//       rgbimg.at<cv::Vec3b>(r, c) = color;
+//     }
+//   }
+//   for(cv::Point2f p : pret){
+//       cv::Vec3b& color = rgbimg.at<cv::Vec3b>(p.y, p.x);
+//       color[0] = 255;
+//       color[1] = 0;
+//       color[2] = 0;
+//       rgbimg.at<cv::Vec3b>(p.y, p.x) = color;
+//   }
+//   const std::string filename = "run1/out.png";
+//   bool success = cv::imwrite(filename, rgbimg);
+//   if(!success) {
+//     dbgstr("failed to write image");
+//   }else{
+//     dbgstr("wrote image");
+//   }
+// }
+
 void test_cameraToWorld() {
   cv::Mat world_points(cv::Size(27, 3), CV_64F);
   for(unsigned int i = -1; i <= 1; i++){
     for(unsigned int j = -1; j <= 1; j++){
-      for(unsigned int k = -1; k <= 1; k++){
+      for(unsigned ￼￼Hideint k = -1; k <= 1; k++){
         int ind = i + 1 + ( j + 1) * 3 + (k + 1) * 9;
         world_points.at<double>(ind, 0)= (double)i;
         world_points.at<double>(ind, 1)= (double)j;
@@ -311,9 +304,9 @@ void run_tests() {
   std::cout << "TEST FIND UNMOVED POINTS" << std::endl;
   test_findUnmovedPoints();
   std::cout << "TEST CIRCULAR MATCHING" << std::endl;
-  test_circularMatching();
+  // test_circularMatching();
   std::cout << "TEST DELETE FEATURES" << std::endl;
-  test_deleteFeaturesWithFailureStatus();
+  // test_deleteFeaturesWithFailureStatus();
   // std::cout << "TEST CAMERA TO WORLD" << std::endl;
   // test_cameraToWorld();
   // TODO: Cameratoworld, matchingFeatures maybe (mostly tested)? 
@@ -336,11 +329,18 @@ bool isRotationMatrix(const cv::Mat &R)
 // /usr/bin/clang++ -fdiagnostics-color=always -g /home/alex/git/stereo_visual_odometry/src/main.cpp -o /home/alex/git/stereo_visual_odometry/src/main `pkg-config opencv --cflags --libs` -v
 int main(int argc, char** argv) {
   // extrinsics with kalibr
-    // run_tests();
-    int N_FRAMES = std::stoi(argv[1]);
-    std::string folderName = "run1";//"rand_feats";
+    run_tests();
+    int N_FRAMES = 2;
+    if(argc == 1){
+      std::cout << "No N_FRAMES given, defaulting to 2" << std::endl;
+    } else {
+      N_FRAMES = std::stoi(argv[1]);
+    }
+    std::string folderName = "run1";
     bool has_ground_truth = true;
-    bool useRot = true;
+    if(folderName == "rand_feats"){
+      has_ground_truth = false;
+    }
     // std::string folderName = "run1";
     std::stringstream buffer;
     if(has_ground_truth) {
@@ -357,12 +357,19 @@ int main(int argc, char** argv) {
     resultbuffer.open (folderName + "/result.csv");
     resultbuffer << "x,y,z,gtx,gty" << "\n";
 
-    float left_P[3][4] = {{322.11376, 0.0, 327.47336, 0.0},
-                          {0.0, 322.11376, 176.33722, 0.0},
-                          {0.0, 0.0, 1.0, 0.0}};
-    float right_P[3][4] = {{322.11376, 0.0, 327.47336, -22.5428},
-                           {0.0, 322.11376, 176.33722, 0.0},
-                           {0.0, 0.0, 1.0, 0.0}};
+    float left_P[3][4] = {{361.49914, 0., 345.32559, 0.0},
+                              {0., 361.49914, 174.00476, 0.0},
+                              {0.0, 0.0, 1.0, 0.0}};
+    float right_P[3][4] = {{361.49914, 0., 345.32559, -22.5428},
+                              {0., 361.49914, 174.00476, 0.0},
+                              {0.0, 0.0, 1.0, 0.0}};
+    // Original Proejction Left/Right Intrinsic Matrix
+    // float left_P[3][4] = {{322.11376, 0.0, 327.47336, 0.0},
+    //                       {0.0, 322.11376, 176.33722, 0.0},
+    //                       {0.0, 0.0, 1.0, 0.0}};
+    // float right_P[3][4] = {{322.11376, 0.0, 327.47336, -22.5428},
+    //                        {0.0, 322.11376, 176.33722, 0.0},
+    //                        {0.0, 0.0, 1.0, 0.0}};
     cv::Mat projMatrl(3, 4, CV_32F, left_P);
     cv::Mat projMatrr(3, 4, CV_32F, right_P);
     VisualOdometry vo(projMatrl, projMatrr);
@@ -382,18 +389,12 @@ int main(int argc, char** argv) {
         gty = std::stod(ystr);
       }
       std::pair<cv::Mat, cv::Mat> images = readImages(folderName, i);
-      std::pair<cv::Mat, cv::Mat> out =  vo.stereo_callback(images.first, images.second);
-      cv::Mat translation = out.first;
-      cv::Mat rotation = out.second;
+      std::tuple<bool, cv::Mat, cv::Mat> out =  vo.stereo_callback(images.first, images.second);
+      // bool success = std::get<0>(out);
+      cv::Mat translation = std::get<1>(out);
+      cv::Mat rotation = std::get<2>(out);
       assert(isRotationMatrix(rotation));
-      if (useRot){
-        visual_odometry::integrateOdometryStereo(frame_pose, rotation, translation);
-      } else {
-        // This still goes in the wrong direction. Why?
-        frame_pose.col(3).at<double>(0) += translation.at<double>(0);
-        frame_pose.col(3).at<double>(1) += translation.at<double>(1);
-        frame_pose.col(3).at<double>(2) += translation.at<double>(2);
-      }
+      frame_pose = frame_pose * visual_odometry::getInverseTransform(rotation, translation);
       double x = frame_pose.col(3).at<double>(0);
       double y = frame_pose.col(3).at<double>(1);
       double z = frame_pose.col(3).at<double>(2);

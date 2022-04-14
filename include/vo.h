@@ -32,6 +32,7 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/video/tracking.hpp>
 #include <sstream>
+#include <memory>
 #include <string>
 #include <vector>
 #define dbg(x) std::cerr << " >>> " << #x << " = " << x << std::endl;
@@ -74,24 +75,24 @@ extern "C" {
 namespace visual_odometry {
 
 /**
- * @brief Number of buckets to divide the image into.
+ * @brief First row of buckets
  */
-const int BUCKET_START_ROW = 3;
+const int BUCKET_START_ROW = 1;
 
 /**
  * @brief Number of buckets along each axis of the image.
- * In total, there will be BUCKETS_ALONG_HEIGHT * BUCKETS_ALONG_WIDTH
- * buckets.
+ * In total, there will be BUCKETS_ALONG_WIDTH * BUCKETS_ALONG_HEIGHT
+ * buckets. Note the image size is 512x288
  */
-const int BUCKETS_ALONG_HEIGHT = 15;
-const int BUCKETS_ALONG_WIDTH = 26;
+const int BUCKETS_ALONG_WIDTH = 256;
+const int BUCKETS_ALONG_HEIGHT = 144;
 /**
  * @brief Maximum number of features per bucket
  */
 const int FEATURES_PER_BUCKET = 1;
 
 /**
- * @brief Minimum number of features before using VO
+ * @brief Minimum number of features before giving up on VO
  */
 const int FEATURES_THRESHOLD = 20;
 
@@ -110,7 +111,7 @@ const int AGE_THRESHOLD = 20;
  * @brief Minimum confidence for the robot to report a feature
  * detection
  */
-const int FAST_THRESHOLD = 10;
+const int FAST_THRESHOLD = 15;
 
 
 /**
@@ -169,6 +170,10 @@ public:
    * @param image Image dimensions are used for getting boundaries of the grid.
    */
   void appendGridOfFeatures(const cv::Mat &image);
+  /**
+   * @brief Remove all points from the feature set.
+   */
+  void clear();
 };
 
 /**
@@ -212,19 +217,33 @@ public:
 
 class VisualOdometry {
 private:
-  /* Number of frames seen so far. */
+  /** Number of frames seen so far. */
   int frame_id = 0;
-  /* Projection matrices for the left and right cameras. */
+  /** Projection matrices for the left and right cameras. */
   cv::Mat leftCameraProjection_, rightCameraProjection_;
+  /** The rightmost 3x3 submatrix of leftCameraProjection_ */
+  cv::Mat left_camera_matrix;
 
-  /* Images at current and next time step. */
+  /** Images at current and next time step. */
   cv::Mat imageRightT0_, imageLeftT0_;
   cv::Mat imageRightT1_, imageLeftT1_;
 
-  /* Initial pose variables. */
+  /** Initial pose variables. */
 
-  /* Set of features currently tracked. */
+  /** Set of features currently tracked. */
   FeatureSet currentVOFeatures;
+
+  /**
+   * Cached values for the image optical flow pyramids.
+   */
+  cv::Mat lastLeftPyramid;
+  cv::Mat lastRightPyramid;
+  /**
+    In case of failure, just return the last value rotation
+    and translation
+  */
+  cv::Mat last_rotation = cv::Mat::eye(3, 3, CV_64F);
+  cv::Mat last_translation = cv::Mat::zeros(3, 1, CV_64F);
 
 public:
   // Just public for testing
@@ -247,10 +266,14 @@ public:
    * @param image_left The left image from stereo camera
    *
    * @param image_right The right image from stereo camera
-   * @return (translation, rotation): The 3x1 translation and 3x3 rotation matrix of the robot,
+   * @return (success, translation, rotation):
+   * success: A flag, false if we could not produce a useful result (because not
+   * enough features were detected or something went wrong
+   * and the prediction is very extreme).
+   * translation, rotation: The 3x1 translation and 3x3 rotation matrix of the robot,
    * relative to the previous frame.
    */
-  std::pair<cv::Mat, cv::Mat> stereo_callback(const cv::Mat &image_left, const cv::Mat &image_right);
+  std::tuple<bool, cv::Mat, cv::Mat> stereo_callback(const cv::Mat &image_left, const cv::Mat &image_right);
 };
 
 /**
@@ -267,32 +290,23 @@ std::vector<cv::Point2f> featureDetectionFast(const cv::Mat image, const int fas
       std::vector<float>& response_strengths);
 
 /**
- * @brief Given parallel vectors of points, ages, and the status of those points,
+ * @brief Given a vectors of points,
  * update the vectors by removing elements with a invalid status.
  *
- * @param points[0..4] vectors of points to update based on status, each with
- * the same length as status_all.
+ * @param points_vector vectors of points to update based on status
  *
- * @param currentFeatures Current set of features we will need to update.
- *
- * @param status_all a vector with 1 If the point is valid, and 0 if it should be discarded.
+ * @param status a vector true if point is valid, and 0 if it should be discarded.
  */
-void deleteFeaturesAndPointsWithFailureStatus(
-    std::vector<cv::Point2f> &points0, std::vector<cv::Point2f> &points1,
-    std::vector<cv::Point2f> &points2, std::vector<cv::Point2f> &points3,
-    std::vector<cv::Point2f> &points4, FeatureSet &currentFeatures,
-    const std::vector<bool> &status_all);
+void deletePointsWithFailureStatus(std::vector<cv::Point2f> &point_vector,
+    const std::vector<bool> &isok);
 /**
- * @brief Given parallel vectors of points, ages, and the status of those points,
- * update the vectors by removing elements with a invalid status.
- *
+ * @brief Given a set of features, update it by removing elements with a invalid status.
  * @param currentFeatures Current set of features we will need to update.
  *
- * @param status_all a vector with 1 If the point is valid, and 0 if it should be discarded.
+ * @param status a vector true if point is valid, and 0 if it should be discarded.
  */
 void deleteFeaturesWithFailureStatus(FeatureSet &currentFeatures,
-    const std::vector<bool> &status_all);
-
+    const std::vector<bool> &isok);
 
 /**
  * @brief Perform circular matching on 4 images and
@@ -304,16 +318,15 @@ void deleteFeaturesWithFailureStatus(FeatureSet &currentFeatures,
  * points_1, points_2, points_3, and then back to points_0.
  * @param current_features The current feature set to consider while performing
  * the circular matching.
- * @return matchingStatus An array parallel to the points arrays which is true
- *      at points that were matched correctly.
  */
-std::vector<bool> circularMatching(const cv::Mat img_0, const cv::Mat img_1, 
+void circularMatching(const cv::Mat img_0, const cv::Mat img_1, 
                         const cv::Mat img_2, const cv::Mat img_3,
                         std::vector<cv::Point2f> & points_0,
                         std::vector<cv::Point2f> & points_1,
                         std::vector<cv::Point2f> & points_2,
                         std::vector<cv::Point2f> & points_3,
-                        std::vector<cv::Point2f> & points_0_return);
+                        std::vector<cv::Point2f> & points_0_return,
+                        FeatureSet& current_features);
 
 /**
  * @brief Given two vectors of points, find the locations where they
@@ -323,7 +336,7 @@ std::vector<bool> circularMatching(const cv::Mat img_0, const cv::Mat img_1,
  *
  * @param threshold The distance at which to consider the points moved.
  *
- * @return a vector v where v[i] is true iff |points_1[i] - points_2[i]| <= threshold
+ * @return a vector v where v[i] is 1 iff |points_1[i] - points_2[i]| <= threshold, else 0
  */
 std::vector<bool> findClosePoints(const std::vector<cv::Point2f> &points_1,
                      const std::vector<cv::Point2f> &points_2,
@@ -364,7 +377,7 @@ std::pair<cv::Mat, bool> cameraToWorld(const cv::Mat &cameraProjection,
  * @param points[(Left)|(Right)][01]: references to 4 empty vectors of points to fill up with feature positions.
  */
 void matchingFeatures(const cv::Mat &imageLeftT0, const cv::Mat &imageRightT0,
-                      cv::Mat &imageLeftT1, cv::Mat &imageRightT1,
+                      const cv::Mat &imageLeftT1, const cv::Mat &imageRightT1,
                       FeatureSet &currentVOFeatures,
                       std::vector<cv::Point2f> &pointsLeftT0,
                       std::vector<cv::Point2f> &pointsRightT0,
@@ -372,17 +385,14 @@ void matchingFeatures(const cv::Mat &imageLeftT0, const cv::Mat &imageRightT0,
                       std::vector<cv::Point2f> &pointsRightT1);
 
 /**
- * @brief Compute the next pose from the current one
- * given the rotation and translation in the frame.
- * Essentially a multiplication of homogeneous transforms.
+ * @brief Compute the inverse transform corresponding to a rotation
+ * and tranlation vector.
  * 
- * @param frame_pose The original position of the robot, will be modified.
- *
  * @param rotation The rotation to go through.
  *
  * @param translation_stereo The translation to go through.
  */
-void integrateOdometryStereo(cv::Mat &frame_pose, const cv::Mat &rotation,
-                              const cv::Mat &translation_stereo);
+cv::Mat getInverseTransform(const cv::Mat &rotation, const cv::Mat &translation_stereo);
+
 } // namespace visual_odometry
 #endif
