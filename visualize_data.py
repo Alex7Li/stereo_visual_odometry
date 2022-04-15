@@ -36,6 +36,7 @@ distance_from_goal = np.linalg.norm([xs[-1]-gtxs[-1],ys[-1] - gtys[-1],zs[-1]])
 goal_distance = np.sqrt(gtxs[-1]**2 + gtys[-1]**2)
 print(f"Absolute Error={distance_from_goal:.4f}, Goal distance={goal_distance:.4f}, "
       f"Relative Error={np.abs(distance_from_goal)/goal_distance:.4f}"
-      f"Total D={np.sqrt(np.abs(xs[-1]**2 + ys[-1]**2 + zs[-1]**2))}")
+      f"Total D={np.sqrt(np.abs(xs[-1]**2 + ys[-1]**2 + zs[-1]**2))}"
+      f"End={xs[-1]:.2f}, {ys[-1]:.2f}, {zs[-1]:.2f}")
 plt.show()
 

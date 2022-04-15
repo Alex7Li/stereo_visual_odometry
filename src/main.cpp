@@ -17,7 +17,7 @@ std::pair<cv::Mat, cv::Mat> readImages(const std::string folderName, int i) {
     zeros = 6;
     end = ".png";
     }
-    lFJust append a bunch of random featuresileName << folderName << "/left/frame" << std::setw(zeros) << std::setfill('0') << i << end;
+    lFileName << folderName << "/left/frame" << std::setw(zeros) << std::setfill('0') << i << end;
     rFileName << folderName << "/right/frame" << std::setw(zeros) << std::setfill('0') << i << end;
     float left_P[3][3] = {{361.49914, 0., 345.32559},
                               {0., 361.49914, 174.00476},
@@ -183,35 +183,44 @@ void test_findUnmovedPoints(){
 }
 
 void test_circularMatching() {
+    float left_P[3][4] = {{361.49914, 0., 345.32559, 0.0},
+                              {0., 361.49914, 174.00476, 0.0},
+                              {0.0, 0.0, 1.0, 0.0}};
+    float right_P[3][4] = {{361.49914, 0., 345.32559, -22.5428},
+                              {0., 361.49914, 174.00476, 0.0},
+                              {0.0, 0.0, 1.0, 0.0}};
+    cv::Mat projMatrl(3, 4, CV_32F, left_P);
+    cv::Mat projMatrr(3, 4, CV_32F, right_P);
+  VisualOdometry vo(projMatrl, projMatrr);
   std::vector<cv::Point2f> pl0, pr0, pl1, pr1, pret;
-  auto t0 = readImages("run1/", 0);
-  auto t1 = readImages("run1/", 1);
+  auto t0 = readImages("run1", 30);
+  auto t1 = readImages("run1", 31);
   cv::Mat iL0 = t0.first;
   cv::Mat iR0 = t0.second;
   cv::Mat iL1 = t1.first;
   cv::Mat iR1 = t1.second;
+  vo.stereo_callback(iL0,iR0);
   FeatureSet fs;
   fs.appendFeaturesFromImage(iL0, FAST_THRESHOLD);
   unsigned int n_points = fs.points.size();
   // Check that it doesn't crash on boundary conditions
-  circularMatching(iL0, iR0, iL1, iR1, pl0, pr0, pl1, pr1, pret, fs);
+  vo.circularMatching(iL1, iR1, pl0, pr0, pl1, pr1, fs);
   pl0.push_back(fs.points[0]);
-  circularMatching(iL0, iR0, iL1, iR1, pl0, pr0, pl1, pr1, pret, fs);
+  vo.circularMatching(iL1, iR1, pl0, pr0, pl1, pr1, fs);
   // run
   pl0 = fs.points;
-  circularMatching(iL0, iR0, iL1, iR1, pl0, pr0, pl1, pr1, pret, fs);
+  vo.circularMatching(iL1, iR1, pl0, pr0, pl1, pr1, fs);
   assert(pl0.size() == n_points);
   assert(pl1.size() == n_points);
   assert(pr0.size() == n_points);
   assert(pr1.size() == n_points);
-  assert(pret.size() == n_points);
-  // assert(ok >= 30); // Got 30 with original branch, want more if possible
+  assert(n_points == 148);
 }
 
 // void test_deleteFeaturesWithFailureStatus() {
 //   std::vector<cv::Point2f> pl0, pr0, pl1, pr1, pret;
-//   auto t0 = readImages("run1/", 0);
-//   auto t1 = readImages("run1/", 1);
+//   auto t0 = readImages("run1", 0);
+//   auto t1 = readImages("run1", 1);
 //   cv::Mat iL0 = t0.first;
 //   cv::Mat iR0 = t0.second;
 //   cv::Mat iL1 = t1.first;
@@ -271,23 +280,56 @@ void test_circularMatching() {
 // }
 
 void test_cameraToWorld() {
-  cv::Mat world_points(cv::Size(27, 3), CV_64F);
-  for(unsigned int i = -1; i <= 1; i++){
-    for(unsigned int j = -1; j <= 1; j++){
-      for(unsigned ￼￼Hideint k = -1; k <= 1; k++){
-        int ind = i + 1 + ( j + 1) * 3 + (k + 1) * 9;
-        world_points.at<double>(ind, 0)= (double)i;
-        world_points.at<double>(ind, 1)= (double)j;
-        world_points.at<double>(ind, 2) = (double)k;
+  float camera_matrix[3][3] = {{1.0, 0., 0.0},
+                        {0., 1.0, 0.0},
+                        {0.0, 0.0, 1.0}};
+  cv::Mat projMatrl(3, 3, CV_32F, camera_matrix);
+  cv::Mat world_point_x(cv::Size(1, 27), CV_32F);
+  cv::Mat world_point_y(cv::Size(1, 27), CV_32F);
+  cv::Mat world_point_z(cv::Size(1, 27), CV_32F);
+  std::vector<cv::Point2f> camera_points(27);
+  for(int i = -1; i <= 1; i++){
+    for(int j = -1; j <= 1; j++){
+      for(int k = -1; k <= 1; k++){
+        int ind = i + 1 + (j + 1) * 3 + (k + 1) * 9;
+        world_point_x.at<float>(0, ind) = i * (k+1.0)/2;
+        world_point_y.at<float>(0, ind) = j * (k+1.0)/2;
+        world_point_z.at<float>(0, ind) = float(k);
+        camera_points[ind] = cv::Point2f(i, j);
       }
     }
   }
+  std::vector<cv::Mat> world_point_channels;
+  world_point_channels.push_back(world_point_x);
+  world_point_channels.push_back(world_point_y);
+  world_point_channels.push_back(world_point_z);
+  cv::Mat world_points;
+  cv::merge(world_point_channels, world_points);
 
   cv::Mat rotation = cv::Mat::eye(3, 3, CV_64F);
   cv::Mat translation = cv::Mat::zeros(3, 1, CV_64F);
-  // cv::Mat inliers = cameraToWorld(leftCameraProjection_,
-  //     pointsLeftT1, world_points, rotation, translation);
+  auto result = cameraToWorld(projMatrl,
+      camera_points, world_points, rotation, translation);
+  dbg(rotation);
+  dbg(translation);
+  int n_inliers = result.first.size().height;
+  dbg(n_inliers);
+  for(int i = 0; i < 3; i++){
+    for(int j = 0; j < 3; j++){
+      if(i==j){
+        assert(abs(rotation.at<double>(i,j) - 1) < 1e-8);
+      } else {
+        assert(abs(rotation.at<double>(i,j)) < 1e-8);
+      }
+    }
+  }
+  assert(abs(translation.at<double>(0)) < 1e-8);
+  assert(abs(translation.at<double>(1)) < 1e-8);
+  assert(abs(translation.at<double>(2) + 2) < 1e-8);
+  assert(result.second);
+  assert(n_inliers == 27); // WHY IS THIS 11 not 27???
 }
+
 void test_goes_forward() {
 
 }
@@ -304,13 +346,9 @@ void run_tests() {
   std::cout << "TEST FIND UNMOVED POINTS" << std::endl;
   test_findUnmovedPoints();
   std::cout << "TEST CIRCULAR MATCHING" << std::endl;
-  // test_circularMatching();
+  test_circularMatching();
   std::cout << "TEST DELETE FEATURES" << std::endl;
-  // test_deleteFeaturesWithFailureStatus();
-  // std::cout << "TEST CAMERA TO WORLD" << std::endl;
-  // test_cameraToWorld();
-  // TODO: Cameratoworld, matchingFeatures maybe (mostly tested)? 
-
+  test_cameraToWorld();
   std::cout << "ALL TESTS PASS" << std::endl;
   // assert(false);
   // std::cout << "NEVERMIND ASSERTS WERE JUST DISABLED" << std::endl;
@@ -329,12 +367,14 @@ bool isRotationMatrix(const cv::Mat &R)
 // /usr/bin/clang++ -fdiagnostics-color=always -g /home/alex/git/stereo_visual_odometry/src/main.cpp -o /home/alex/git/stereo_visual_odometry/src/main `pkg-config opencv --cflags --libs` -v
 int main(int argc, char** argv) {
   // extrinsics with kalibr
-    run_tests();
     int N_FRAMES = 2;
     if(argc == 1){
       std::cout << "No N_FRAMES given, defaulting to 2" << std::endl;
     } else {
       N_FRAMES = std::stoi(argv[1]);
+      if(N_FRAMES == 0){
+        run_tests();
+      }
     }
     std::string folderName = "run1";
     bool has_ground_truth = true;

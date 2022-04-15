@@ -37,7 +37,7 @@ void displayTracking(const cv::Mat& image_1,
                      const std::vector<cv::Point2f>&  pointsRightT1)
 {
     // -----------------------------------------
-    // Display feature racking
+    // Display feature tracking.
     // -----------------------------------------
     int radius = 2;
     cv::Size sz1 = image_1.size();
@@ -99,9 +99,12 @@ std::tuple<bool, cv::Mat, cv::Mat> VisualOdometry::stereo_callback(const cv::Mat
     if (!frame_id) {
       imageLeftT0_ = imageLeft;
       imageRightT0_ = imageRight;
+      cv::buildOpticalFlowPyramid(imageLeft, lastLeftPyramid, winSize, maxLevel);
+      cv::buildOpticalFlowPyramid(imageRight, lastRightPyramid, winSize, maxLevel);
       frame_id++;
       return fail_result;
     }
+    frame_id++;
 
     imageLeftT1_ = imageLeft;
     imageRightT1_ = imageRight;
@@ -114,7 +117,7 @@ std::tuple<bool, cv::Mat, cv::Mat> VisualOdometry::stereo_callback(const cv::Mat
                      pointsLeftT1, pointsRightT1);
 
     // cv::Mat left_scene = displayPoints(imageLeftT0_, pointsLeftT0);
-    cv::Mat right_scene = displayPoints(imageRightT0_, pointsRightT0);
+    // cv::Mat right_scene = displayPoints(imageRightT0_, pointsRightT0);
     // Update current tracked points.
     for (unsigned int i = 0; i < currentVOFeatures.ages.size(); ++i) {
       currentVOFeatures.ages[i] += 1;
@@ -123,7 +126,7 @@ std::tuple<bool, cv::Mat, cv::Mat> VisualOdometry::stereo_callback(const cv::Mat
     imageLeftT0_ = imageLeftT1_;
     imageRightT0_ = imageRightT1_;
 
-    // Need at least 4 points for cameraToWorld not to crash.
+    // Need at least 4 points for cameraToWorld to not crash.
     if (pointsLeftT0.size() <= std::max(4, FEATURES_THRESHOLD)) {
       frame_id++;
       dbgstr("Not enough points");
@@ -142,6 +145,12 @@ std::tuple<bool, cv::Mat, cv::Mat> VisualOdometry::stereo_callback(const cv::Mat
 
     cv::Mat rotation = last_rotation.clone();
     cv::Mat translation = last_translation.clone();
+    dbg(left_camera_matrix.depth());
+    dbg(pointsLeftT0.size());
+    dbg(world_points_T0.depth());
+    dbg(world_points_T0.size());
+    dbg(rotation.depth());
+    dbg(translation.depth());
     auto result = cameraToWorld(left_camera_matrix,
         pointsLeftT1, world_points_T0, rotation, translation);
     int n_inliers = result.first.size().height;
@@ -150,8 +159,9 @@ std::tuple<bool, cv::Mat, cv::Mat> VisualOdometry::stereo_callback(const cv::Mat
     for(int i = 0; i < n_inliers; i++){
       size_t inlier_index = result.first.at<int>(i);
       is_ok[inlier_index] = true;
-      currentVOFeatures.strengths[inlier_index] += 100;
     }
+    dbg(n_inliers);
+    // displayTracking(left_scene, right_scene, pointsLeftT0, pointsRightT0);
     if (false){
       // Tracking the points to the next frame is pretty bad, maybe we can
       // use the transform? It doesn't seem to work that well though
@@ -178,9 +188,6 @@ std::tuple<bool, cv::Mat, cv::Mat> VisualOdometry::stereo_callback(const cv::Mat
         }
       }
       dbg(proj_error);
-      // cv::Mat left_scene = displayPoints(imageLeftT0_, pointsLeftT0);
-      // cv::Mat right_scene = displayPoints(imageLeftT1_, currentVOFeatures.points);
-      // displayTracking(left_scene, right_scene, pointsLeftT0, pointsOut);
     } else {
       currentVOFeatures.points = pointsLeftT1;
     }
@@ -209,36 +216,13 @@ std::tuple<bool, cv::Mat, cv::Mat> VisualOdometry::stereo_callback(const cv::Mat
     }
     cv::Mat xyz = frame_pose.col(3).clone();
     cv::Mat R = frame_pose(cv::Rect(0, 0, 3, 3));
-    // publish
-    // if (true) {
-    //     static tf::TransformBroadcaster br;
-
-    //     tf::Transform transform;
-    //     transform.setOrigin(tf::Vector3(xyz.at<double>(0), xyz.at<double>(1),
-    //                                     xyz.at<double>(2)));
-    //     tf::Quaternion q;
-    //     tf::Matrix3x3 R_tf(
-    //         R.at<double>(0, 0), R.at<double>(0, 1), R.at<double>(0, 2),
-    //         R.at<double>(1, 0), R.at<double>(1, 1), R.at<double>(1, 2),
-    //         R.at<double>(2, 0), R.at<double>(2, 1), R.at<double>(2, 2));
-    //     R_tf.getRotation(q);
-    //     transform.setRotation(q);
-    //     br.sendTransform(tf::StampedTransform(transform, ros::Time::now(),
-    //                                           "odom", "camera"));
-
-    //     transform.setOrigin(tf::Vector3(0.0, 0.0, 0.0));
-    //     tf::Quaternion q2(0.5, -0.5, 0.5, -0.5);
-    //     transform.setRotation(q2);
-    //     br.sendTransform(
-    //         tf::StampedTransform(transform, ros::Time::now(), "map",
-    //         "odom"));
-    // }
     frame_id++;
     last_translation = translation;
     last_rotation = rotation;
     // Translation and rotation from the coordinate frame of the
     // world, which is projected onto the images by the input
     // projection matricies. 
+    // TODO: Translation is sus af! one dimension is undedetermined!
     return std::make_tuple(true, translation, rotation);
   }
 
@@ -269,30 +253,27 @@ void visual_odometry::deleteFeaturesWithFailureStatus(
     }
   }
 
-void visual_odometry::circularMatching(
-    const cv::Mat imgLeftT0, const cv::Mat imgRightT0, const cv::Mat imgLeftT1,
-    const cv::Mat imgRightT1, std::vector<cv::Point2f> &pointsLeftT0,
-    std::vector<cv::Point2f> &pointsLeftT1,
+void VisualOdometry::circularMatching(
+    const cv::Mat &imgLeftT1,
+    const cv::Mat &imgRightT1,
+    std::vector<cv::Point2f> &pointsLeftT0,
     std::vector<cv::Point2f> &pointsRightT0,
+    std::vector<cv::Point2f> &pointsLeftT1,
     std::vector<cv::Point2f> &pointsRightT1,
-    std::vector<cv::Point2f> &points_0_return, FeatureSet &current_features) {
+    FeatureSet &current_features) {
     if (pointsLeftT0.size() == 0) {
         return; // Avoid edge cases by exiting early.
     }
     std::vector<float> err;
-    cv::Size winSize          = cv::Size(7, 7);
     cv::TermCriteria termcrit = cv::TermCriteria(
-        cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 30, 0.001);
+        cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 30, 0.0001);
 
     std::vector<uchar> status0;
     std::vector<uchar> status1;
     std::vector<uchar> status2;
     std::vector<uchar> status3;
-    std::vector<cv::Mat> pyramidl0;
     std::vector<cv::Mat> pyramidl1;
-    std::vector<cv::Mat> pyramidr0;
     std::vector<cv::Mat> pyramidr1;
-    int maxLevel = 3;
     double minEigThreshold = 0.0001;
     // Perform the circular matching in the order
     // leftT0 -> leftT1 -> rightT1 -> rightT0 -> leftT0.
@@ -301,31 +282,31 @@ void visual_odometry::circularMatching(
     // we want the leftt1 points to be as accurate as possible, since
     // they are used to estimate the position of features in the
     // next frame.
-    cv::buildOpticalFlowPyramid(imgLeftT0, pyramidl0, winSize, maxLevel);
-    cv::buildOpticalFlowPyramid(imgRightT0, pyramidl1, winSize, maxLevel);
-    cv::buildOpticalFlowPyramid(imgLeftT1, pyramidr0, winSize, maxLevel);
+    cv::buildOpticalFlowPyramid(imgLeftT1, pyramidl1, winSize, maxLevel);
     cv::buildOpticalFlowPyramid(imgRightT1, pyramidr1, winSize, maxLevel);
 
-    calcOpticalFlowPyrLK(pyramidl0, pyramidl1, pointsLeftT0, pointsLeftT1,
+    calcOpticalFlowPyrLK(lastLeftPyramid, pyramidl1, pointsLeftT0, pointsLeftT1,
                          status0, err, winSize, maxLevel, termcrit, 0, minEigThreshold);
     calcOpticalFlowPyrLK(pyramidl1, pyramidr1, pointsLeftT1, pointsRightT1,
                          status1, err, winSize, maxLevel, termcrit, 0, minEigThreshold);
-    calcOpticalFlowPyrLK(pyramidr1, pyramidr0, pointsRightT1, pointsRightT0,
+    calcOpticalFlowPyrLK(pyramidr1, lastRightPyramid, pointsRightT1, pointsRightT0,
                          status2, err, winSize, maxLevel, termcrit, 0, minEigThreshold);
-    calcOpticalFlowPyrLK(pyramidr0, pyramidl0, pointsRightT0, points_0_return,
+    std::vector<cv::Point2f> points_left_T0_circle;
+    calcOpticalFlowPyrLK(lastRightPyramid, lastLeftPyramid, pointsRightT0, points_left_T0_circle,
                          status3, err, winSize, maxLevel, termcrit, 0, minEigThreshold);
-
     // Remove all features that optical flow failed to track.
-    std::vector<bool> is_ok(status0.size());
+    std::vector<bool> is_ok = findClosePoints(pointsLeftT0, points_left_T0_circle, .15);
     for (size_t i = 0; i < is_ok.size(); i++) {
-        is_ok[i] = status0[i] || status1[i] || status2[i] || status3[i];
+        is_ok[i] = status0[i] || status1[i] || status2[i] || status3[i] || is_ok[i];
     }
+    lastLeftPyramid = pyramidl1;
+    lastRightPyramid = pyramidr1;
     deleteFeaturesWithFailureStatus(current_features, is_ok);
     deletePointsWithFailureStatus(pointsLeftT0, is_ok);
     deletePointsWithFailureStatus(pointsLeftT1, is_ok);
     deletePointsWithFailureStatus(pointsRightT1, is_ok);
     deletePointsWithFailureStatus(pointsRightT0, is_ok);
-    deletePointsWithFailureStatus(points_0_return, is_ok);
+    deletePointsWithFailureStatus(points_left_T0_circle, is_ok);
 }
 
 
@@ -375,8 +356,8 @@ std::pair<cv::Mat, bool> visual_odometry::cameraToWorld(
   cv::Mat distCoeffs = cv::Mat::zeros(4, 1, CV_64FC1);
   cv::Mat rvec;
   cv::Rodrigues(rotation, rvec);
-  int iterationsCount = 500; // number of Ransac iterations.
-  float reprojectionError = 6; // maximum allowed distance to consider it an inlier.
+  int iterationsCount = 100; // number of Ransac iterations.
+  float reprojectionError = .1; // maximum allowed distance to consider it an inlier.
   float confidence = 0.9999; // RANSAC successful confidence.
   bool useExtrinsicGuess = true;
   int flags = cv::SOLVEPNP_ITERATIVE;
@@ -389,7 +370,7 @@ std::pair<cv::Mat, bool> visual_odometry::cameraToWorld(
   return std::make_pair(inliers, success);
 }
 
-void visual_odometry::matchingFeatures(
+void VisualOdometry::matchingFeatures(
     const cv::Mat &imageLeftT0, const cv::Mat &imageRightT0,
     const cv::Mat &imageLeftT1, const cv::Mat &imageRightT1,
     FeatureSet &currentVOFeatures, std::vector<cv::Point2f> &pointsLeftT0,
@@ -397,13 +378,12 @@ void visual_odometry::matchingFeatures(
     std::vector<cv::Point2f> &pointsLeftT1,
     std::vector<cv::Point2f> &pointsRightT1) {
   
-  std::vector<cv::Point2f> pointsLeftReturnT0;
-  // update feature set with detected features from the image.
+  // Update feature set with detected features from the first image.
   currentVOFeatures.appendFeaturesFromImage(imageLeftT0, FAST_THRESHOLD);
-  if (currentVOFeatures.size() < GRID_THRESHOLD) {
+  if (currentVOFeatures.size() < PRE_MATCHING_FEATURE_THRESHOLD) {
       std::cout << "using lower threshold, only got " << currentVOFeatures.size() << " features" << std::endl;
-      // Just append a bunch of random features
-    currentVOFeatures.appendFeaturesFromImage(imageLeftT0, FAST_THRESHOLD / 3);
+      // Just append a bunch of random features.
+    currentVOFeatures.appendFeaturesFromImage(imageLeftT0, FAST_THRESHOLD / 4);
   }
 
   // --------------------------------------------------------
@@ -411,13 +391,13 @@ void visual_odometry::matchingFeatures(
   // --------------------------------------------------------
 
   pointsLeftT0 = currentVOFeatures.points;
-  circularMatching(imageLeftT0, imageRightT0, imageLeftT1, imageRightT1, 
-                    pointsLeftT0, pointsRightT0, pointsLeftT1, pointsRightT1, pointsLeftReturnT0,
+  circularMatching(imageLeftT1, imageRightT1, 
+              pointsLeftT0, pointsRightT0, pointsLeftT1, pointsRightT1,
                     currentVOFeatures);
+  std::vector<bool> is_ok(pointsRightT0.size(), true);
   // Check if circled back points are in range of original points.
-  std::vector<bool> isok = findClosePoints(pointsLeftT0, pointsLeftReturnT0, .15);
   // Only keep points that were matched correctly and are in the image bounds.
-  for(unsigned int i = 0; i < isok.size(); i++) {
+  for(unsigned int i = 0; i < is_ok.size(); i++) {
     if((pointsLeftT0[i].x < 0) || (pointsLeftT0[i].y < 0) ||
             (pointsLeftT0[i].y >= imageLeftT0.rows) || (pointsLeftT0[i].x >= imageLeftT0.cols) ||
             (pointsLeftT1[i].x < 0) || (pointsLeftT1[i].y < 0) ||
@@ -425,16 +405,14 @@ void visual_odometry::matchingFeatures(
             (pointsRightT0[i].x < 0) || (pointsRightT0[i].y < 0) ||
             (pointsRightT0[i].y >= imageRightT0.rows) || (pointsRightT0[i].x >= imageRightT0.cols) ||
             (pointsRightT1[i].x < 0) || (pointsRightT1[i].y < 0) ||
-            (pointsRightT1[i].y >= imageRightT1.rows) || (pointsRightT1[i].x >= imageRightT1.cols) ||
-            (pointsLeftReturnT0[i].x < 0) || (pointsLeftReturnT0[i].y < 0) ||
-            (pointsLeftReturnT0[i].y >= imageLeftT0.rows) || (pointsLeftReturnT0[i].x >= imageLeftT0.cols)
+            (pointsRightT1[i].y >= imageRightT1.rows) || (pointsRightT1[i].x >= imageRightT1.cols)
             ) {
-        isok[i] = false;
+        is_ok[i] = false;
     }
   }
-  deleteFeaturesWithFailureStatus(currentVOFeatures, isok);
-  deletePointsWithFailureStatus(pointsLeftT0, isok);
-  deletePointsWithFailureStatus(pointsLeftT1, isok);
-  deletePointsWithFailureStatus(pointsRightT0, isok);
-  deletePointsWithFailureStatus(pointsRightT1, isok);
+  deleteFeaturesWithFailureStatus(currentVOFeatures, is_ok);
+  deletePointsWithFailureStatus(pointsLeftT0, is_ok);
+  deletePointsWithFailureStatus(pointsLeftT1, is_ok);
+  deletePointsWithFailureStatus(pointsRightT0, is_ok);
+  deletePointsWithFailureStatus(pointsRightT1, is_ok);
 }

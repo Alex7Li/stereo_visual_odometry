@@ -97,10 +97,11 @@ const int FEATURES_PER_BUCKET = 1;
 const int FEATURES_THRESHOLD = 20;
 
 /**
- * @brief Minimum number of features before appending
- * random features in a grid pattern
+ * @brief Minimum number of features before the
+ * matching that we want for a good result.
  */
-const int GRID_THRESHOLD = 100;
+const int PRE_MATCHING_FEATURE_THRESHOLD = 100;
+
 /**
  * @brief Ignore all features that have been around but not detected
  * for this many frames.
@@ -111,7 +112,7 @@ const int AGE_THRESHOLD = 20;
  * @brief Minimum confidence for the robot to report a feature
  * detection
  */
-const int FAST_THRESHOLD = 15;
+const int FAST_THRESHOLD = 20;
 
 
 /**
@@ -234,19 +235,30 @@ private:
   FeatureSet currentVOFeatures;
 
   /**
-   * Cached values for the image optical flow pyramids.
+   * @brief Optical flow calculation hyperparameters:
+   * window size and max pyramid level
    */
-  cv::Mat lastLeftPyramid;
-  cv::Mat lastRightPyramid;
+    cv::Size winSize = cv::Size(7, 7);
+    int maxLevel = 3;
+
   /**
-    In case of failure, just return the last value rotation
-    and translation
+   * @brief Cached values for the image optical flow pyramids.
+   */
+  std::vector<cv::Mat> lastLeftPyramid;
+  std::vector<cv::Mat> lastRightPyramid;
+
+  /**
+   * @brief In case of failure, just return the last value rotation
+   * and translation
   */
   cv::Mat last_rotation = cv::Mat::eye(3, 3, CV_64F);
   cv::Mat last_translation = cv::Mat::zeros(3, 1, CV_64F);
 
 public:
-  // Just public for testing
+  /**
+   * @brief The current estimated pose of the robot.
+   * Just public for testing
+   */
   cv::Mat frame_pose = cv::Mat::eye(4, 4, CV_64F);
   /**
    * @brief Construct a new Visual Odometry object
@@ -274,6 +286,46 @@ public:
    * relative to the previous frame.
    */
   std::tuple<bool, cv::Mat, cv::Mat> stereo_callback(const cv::Mat &image_left, const cv::Mat &image_right);
+
+  /**
+   * @brief Given four images and the set of features used in the last
+   * iteration, this method finds new features in the images and appends
+   * each of the locations of the features in each image to 4 parallel vectors.
+   * 
+   * Calls many of the above functions in a pipeline.
+   * appendFeaturesFromImage -> filterByBucketLocation -> circularMatching -> 
+   * deleteFeaturesWithFailureStatus -> findClosePoints -> removeInvalidPoints
+   * 
+   * @param image[(Left)|(Right)]T[01]: Images from the left/right cameras at the last/current timestep.
+   * @param pyramid[(Left)|(Right)]T0: Cached optical image pyramid for the first two images.
+   * @param currentVOFeatures: The set of currently tracked features, stored as a position in the LeftT0 image, will
+   * be updated with newly detected features.
+   * @param points[(Left)|(Right)][01]: references to 4 empty vectors of points to fill up with feature positions.
+   */
+  void matchingFeatures(const cv::Mat &imageLeftT0, const cv::Mat &imageRightT0,
+                        const cv::Mat &imageLeftT1, const cv::Mat &imageRightT1,
+                        FeatureSet &currentVOFeatures,
+                        std::vector<cv::Point2f> &pointsLeftT0,
+                        std::vector<cv::Point2f> &pointsRightT0,
+                        std::vector<cv::Point2f> &pointsLeftT1,
+                        std::vector<cv::Point2f> &pointsRightT1);
+  /**
+   * @brief Perform circular matching on 4 images and
+   * detect points not found in both cameras for both the previous and
+   * current frame.
+   * @param img_[(Left)|(Right)]T1 Images of the same scene taken by different cameras at 
+   * this timestep.
+   * @param points_[(Left)|(Right)]T[01] Features of the scene detected by the cameras.
+   * @param current_features The current feature set to consider while performing
+   * the circular matching.
+   */
+  void circularMatching(
+      const cv::Mat &imgLeftT1, const cv::Mat &imgRightT1, 
+      std::vector<cv::Point2f> &pointsLeftT0,
+      std::vector<cv::Point2f> &pointsRightT0,
+      std::vector<cv::Point2f> &pointsLeftT1,
+      std::vector<cv::Point2f> &pointsRightT1,
+      FeatureSet &current_features);
 };
 
 /**
@@ -308,25 +360,6 @@ void deletePointsWithFailureStatus(std::vector<cv::Point2f> &point_vector,
 void deleteFeaturesWithFailureStatus(FeatureSet &currentFeatures,
     const std::vector<bool> &isok);
 
-/**
- * @brief Perform circular matching on 4 images and
- * detect points not found in both cameras for both the previous and
- * current frame.
- * @param img_[0,3] Images of the same scene taken by different cameras at different times.
- * @param points_[0,3] Features of the scene detected by the cameras.
- * @param points_0_return The locations of points in points_0 after mapping them to
- * points_1, points_2, points_3, and then back to points_0.
- * @param current_features The current feature set to consider while performing
- * the circular matching.
- */
-void circularMatching(const cv::Mat img_0, const cv::Mat img_1, 
-                        const cv::Mat img_2, const cv::Mat img_3,
-                        std::vector<cv::Point2f> & points_0,
-                        std::vector<cv::Point2f> & points_1,
-                        std::vector<cv::Point2f> & points_2,
-                        std::vector<cv::Point2f> & points_3,
-                        std::vector<cv::Point2f> & points_0_return,
-                        FeatureSet& current_features);
 
 /**
  * @brief Given two vectors of points, find the locations where they
@@ -362,27 +395,6 @@ std::pair<cv::Mat, bool> cameraToWorld(const cv::Mat &cameraProjection,
                 const std::vector<cv::Point2f> &cameraPoints,
                 const cv::Mat &worldPoints, cv::Mat &rotation,
                 cv::Mat &translation);
-/**
- * @brief Given four images and the set of features used in the last
- * iteration, this method finds new features in the images and appends
- * each of the locations of the features in each image to 4 parallel vectors.
- * 
- * Calls many of the above functions in a pipeline.
- * appendFeaturesFromImage -> filterByBucketLocation -> circularMatching -> 
- * deleteFeaturesWithFailureStatus -> findClosePoints -> removeInvalidPoints
- * 
- * @param image[(Left)|(Right)][01]: Images from the left/right cameras at the last/current timestep.
- * @param currentVOFeatures: The set of currently tracked features, stored as a position in the LeftT0 image, will
- * be updated with newly detected features.
- * @param points[(Left)|(Right)][01]: references to 4 empty vectors of points to fill up with feature positions.
- */
-void matchingFeatures(const cv::Mat &imageLeftT0, const cv::Mat &imageRightT0,
-                      const cv::Mat &imageLeftT1, const cv::Mat &imageRightT1,
-                      FeatureSet &currentVOFeatures,
-                      std::vector<cv::Point2f> &pointsLeftT0,
-                      std::vector<cv::Point2f> &pointsRightT0,
-                      std::vector<cv::Point2f> &pointsLeftT1,
-                      std::vector<cv::Point2f> &pointsRightT1);
 
 /**
  * @brief Compute the inverse transform corresponding to a rotation
