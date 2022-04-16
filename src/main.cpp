@@ -351,7 +351,7 @@ int main(int argc, char** argv) {
     cv::Mat projMatrr(3, 4, CV_32F, right_P);
     VisualOdometry vo(projMatrl, projMatrr);
     cv::Mat_<double> frame_pose = cv::Mat::eye(4, 4, CV_64F);
-
+    cv::Mat transform = cv::Mat::eye(4, 4, CV_64F);
     for(int i = st_frame; i < N_FRAMES; i++) {
       std::cout << "Frame " << i << ": ";
       double gtx = 0;
@@ -369,9 +369,9 @@ int main(int argc, char** argv) {
       std::pair<cv::Mat, cv::Mat> images = readImages(folderName, i);
       std::pair<bool, cv::Mat> out = vo.stereo_callback(images.first, images.second);
       bool success = out.first;
-      cv::Mat transform = out.second;
       assert(isRotationMatrix(transform.colRange(0, 3).rowRange(0, 3)));
-      if(success){
+      if(success) {
+        transform = out.second;
         frame_pose = frame_pose * transform;
       } else {
         dbgstr("Failed");

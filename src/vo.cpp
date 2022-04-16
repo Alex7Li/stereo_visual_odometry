@@ -158,69 +158,11 @@ FindRigidTransform(const cv::Mat_<cv::Vec3f> &points1, const cv::Mat_<cv::Vec3f>
     result /= result(3, 3);
     return result;
 }
-std::pair<bool, cv::Mat_<double>>
-FindRigidTransformRemovingNoise(const cv::Mat_<cv::Vec3f> &points1, const cv::Mat_<cv::Vec3f> &points2)
-{
-    // Find the least square error rigid transform.
-    cv::Mat_<double> rigidT = FindRigidTransform(points1, points2);
-    cv::Mat_<cv::Vec4f> points1Homo;
-    cv::convertPointsToHomogeneous(points1, points1Homo);
-    // Try to iteratively the transform by removing outliers.
-    int n_iterations = 18;
-    float decay_rate = .75;
-    float min_threshold = .04; // be within 4 cm of the target
-    float threshold = min_threshold * pow(1.0/decay_rate, n_iterations);
-    // dbg(threshold);
-    int n_inliers = 0;
-    double magnitude = 0;
-    for(int i = 0; i < n_iterations; i++){
-      int n_points = points1.size().height;
-      std::vector<int> inliers;
-      cv::Mat_<float> rigidT_float = cv::Mat::eye(4, 4, CV_32F);;
-      rigidT.convertTo(rigidT_float, CV_32F);
-      for(int j = 0; j < n_points; j++) {
-          cv::Mat_<float> t1_3d = rigidT_float * cv::Mat_<float>(points1Homo.at<cv::Vec4f>(j));
-          if(t1_3d(3) == 0) {
-            continue; // Avoid 0 division
-          }
-          float dx = (t1_3d(0)/t1_3d(3) - points2(j)[0]);
-          float dy = (t1_3d(1)/t1_3d(3) - points2(j)[1]);
-          float dz = (t1_3d(2)/t1_3d(3) - points2(j)[2]);
-          float square_dist = dx * dx + dy * dy + dz * dz;
-          if(square_dist < threshold * threshold){
-            inliers.push_back(j);
-          }
-      }
-      for(int j = 0; j < 3; j++){
-        magnitude += rigidT(j, 3) * rigidT(j, 3);
-      }
-      dbg(magnitude);
-      if(inliers.size() < 50){
-        // dbg(threshold);
-        break;
-      }
-      n_inliers = inliers.size();
-      cv::Mat_<cv::Vec3f> points1subset(n_inliers, 1, cv::Vec3f(0,0,0));
-      cv::Mat_<cv::Vec3f> points2subset(n_inliers, 1, cv::Vec3f(0,0,0));
-      for(int j = 0; j < n_inliers; j++) {
-          points1subset(j) = points1(inliers[j]);
-          points2subset(j) = points2(inliers[j]);
-      }
-      if(i != n_iterations - 1){
-        rigidT = FindRigidTransform(points1subset, points2subset);
-        threshold *= decay_rate;
-      }
-    }
-    if(n_inliers < FEATURES_THRESHOLD || magnitude > .1){
-      return std::make_pair(false, rigidT);
-    }
-    return std::make_pair(true, rigidT);
-}
 std::pair<bool, cv::Mat_<double>> RANSACFindRigidTransform(const cv::Mat_<cv::Vec3f> &points1, const cv::Mat_<cv::Vec3f> &points2)
 {
   cv::Mat points1Homo;
   cv::convertPointsToHomogeneous(points1, points1Homo);
-  int iterations = 100;
+  int iterations = 200;
   int min_n_points = 3;
   int n_points = points1.size().height;
   if(true){
@@ -553,9 +495,10 @@ void VisualOdometry::matchingFeatures(
             (pointsRightT1[i].x < 0) || (pointsRightT1[i].y < 0) ||
             (pointsRightT1[i].y >= imageRightT1.rows) || (pointsRightT1[i].x >= imageRightT1.cols)
             // Since the images are rectified, all the matched points ought to be
-            // horizontal. It's huge rn because my images are not rectified >:(
-            // || (abs(pointsLeftT0[i].y - pointsRightT0[i].y) > 40) ||
-            // (abs(pointsLeftT0[i].y - pointsRightT1[i].y) > 40)
+            // horizontal. Though it's not really horizontal when rolling over
+            // rocks and stuff, so the threshold is really generous.
+            || (abs(pointsLeftT0[i].y - pointsRightT0[i].y) > 100) ||
+            (abs(pointsLeftT0[i].y - pointsRightT1[i].y) > 100)
             ) {
         is_ok[i] = false;
     }
