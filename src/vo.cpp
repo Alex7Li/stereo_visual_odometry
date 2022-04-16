@@ -14,7 +14,6 @@
  *
  ****************************************************************/
 #include "vo.h"
-
 using namespace visual_odometry;
 
 cv::Mat displayPoints(const cv::Mat& image, const std::vector<cv::Point2f>&  points)
@@ -61,7 +60,7 @@ void displayTracking(const cv::Mat& image_1,
       cv::circle(vis, cv::Point((int)pointsRightT1[i].x + image_1.size().width, (int)pointsRightT1[i].y), radius, CV_RGB(255,0,0));
     }
 
-    for (size_t i = 0; i < pointsRightT1.size(); i+=10)
+    for (size_t i = 0; i < pointsRightT1.size(); i++)
     {
       cv::line(vis, pointsLeftT0[i], {(int)pointsRightT1[i].x  + image_1.size().width, (int)pointsRightT1[i].y}, CV_RGB(0,255,0));
     }
@@ -89,11 +88,211 @@ VisualOdometry::VisualOdometry(const cv::Mat leftCameraProjection,
   // std::memcpy(frame_pose.data, initial_pose, sizeof(CV_64F) * 16);
 }
 
+cv::Vec3f CalculateMean(const cv::Mat_<cv::Vec3f> &points)
+{
+    if(points.size().height == 0){
+      return 0;
+    }
+    assert(points.size().width == 1);
+    double mx = 0.0;
+    double my = 0.0;
+    double mz = 0.0;
+    int n_points = points.size().height;
+    for(int i = 0; i < n_points; i++){
+      double x = double(points(i)[0]);
+      double y = double(points(i)[1]);
+      double z = double(points(i)[2]);
+      mx += x;
+      my += y;
+      mz += z;
+    }
+    return cv::Vec3f(mx/n_points, my/n_points, mz/n_points);
+}
+
+// source
+// https://stackoverflow.com/questions/21206870/opencv-rigid-transformation-between-two-3d-point-clouds
+cv::Mat_<double>
+FindRigidTransform(const cv::Mat_<cv::Vec3f> &points1, const cv::Mat_<cv::Vec3f> points2)
+{
+    /* Calculate centroids. */
+    cv::Vec3f t1 = CalculateMean(points1);
+    cv::Vec3f t2 = CalculateMean(points2);
+
+    cv::Mat_<double> T1 = cv::Mat_<double>::eye(4, 4);
+    T1(0, 3) = double(-t1[0]);
+    T1(1, 3) = double(-t1[1]);
+    T1(2, 3) = double(-t1[2]);
+
+    cv::Mat_<double> T2 = cv::Mat_<double>::eye(4, 4);
+    T2(0, 3) = double(t2[0]);
+    T2(1, 3) = double(t2[1]);
+    T2(2, 3) = double(t2[2]);
+
+    /* Calculate covariance matrix for input points. Also calculate RMS deviation from centroid
+     * which is used for scale calculation.
+     */
+    cv::Mat_<double> C(3, 3, 0.0);
+    for (int ptIdx = 0; ptIdx < points1.rows; ptIdx++) {
+        cv::Vec3f p1 = points1(ptIdx) - t1;
+        cv::Vec3f p2 = points2(ptIdx) - t2;
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                C(i, j) += double(p2[i] * p1[j]);
+            }
+        }
+    }
+
+    cv::Mat_<double> u, s, vt;
+    cv::SVD::compute(C, s, u, vt);
+
+    cv::Mat_<double> R = u * vt;
+
+    if (cv::determinant(R) < 0) {
+        R -= u.col(2) * (vt.row(2) * 2.0);
+    }
+
+    cv::Mat_<double> M = cv::Mat_<double>::eye(4, 4);
+    R.copyTo(M.colRange(0, 3).rowRange(0, 3));
+
+    cv::Mat_<double> result = T2 * M * T1;
+    result /= result(3, 3);
+    return result;
+}
+std::pair<bool, cv::Mat_<double>>
+FindRigidTransformRemovingNoise(const cv::Mat_<cv::Vec3f> &points1, const cv::Mat_<cv::Vec3f> &points2)
+{
+    // Find the least square error rigid transform.
+    cv::Mat_<double> rigidT = FindRigidTransform(points1, points2);
+    cv::Mat_<cv::Vec4f> points1Homo;
+    cv::convertPointsToHomogeneous(points1, points1Homo);
+    // Try to iteratively the transform by removing outliers.
+    int n_iterations = 18;
+    float decay_rate = .75;
+    float min_threshold = .04; // be within 4 cm of the target
+    float threshold = min_threshold * pow(1.0/decay_rate, n_iterations);
+    // dbg(threshold);
+    int n_inliers = 0;
+    double magnitude = 0;
+    for(int i = 0; i < n_iterations; i++){
+      int n_points = points1.size().height;
+      std::vector<int> inliers;
+      cv::Mat_<float> rigidT_float = cv::Mat::eye(4, 4, CV_32F);;
+      rigidT.convertTo(rigidT_float, CV_32F);
+      for(int j = 0; j < n_points; j++) {
+          cv::Mat_<float> t1_3d = rigidT_float * cv::Mat_<float>(points1Homo.at<cv::Vec4f>(j));
+          if(t1_3d(3) == 0) {
+            continue; // Avoid 0 division
+          }
+          float dx = (t1_3d(0)/t1_3d(3) - points2(j)[0]);
+          float dy = (t1_3d(1)/t1_3d(3) - points2(j)[1]);
+          float dz = (t1_3d(2)/t1_3d(3) - points2(j)[2]);
+          float square_dist = dx * dx + dy * dy + dz * dz;
+          if(square_dist < threshold * threshold){
+            inliers.push_back(j);
+          }
+      }
+      for(int j = 0; j < 3; j++){
+        magnitude += rigidT(j, 3) * rigidT(j, 3);
+      }
+      dbg(magnitude);
+      if(inliers.size() < 50){
+        // dbg(threshold);
+        break;
+      }
+      n_inliers = inliers.size();
+      cv::Mat_<cv::Vec3f> points1subset(n_inliers, 1, cv::Vec3f(0,0,0));
+      cv::Mat_<cv::Vec3f> points2subset(n_inliers, 1, cv::Vec3f(0,0,0));
+      for(int j = 0; j < n_inliers; j++) {
+          points1subset(j) = points1(inliers[j]);
+          points2subset(j) = points2(inliers[j]);
+      }
+      if(i != n_iterations - 1){
+        rigidT = FindRigidTransform(points1subset, points2subset);
+        threshold *= decay_rate;
+      }
+    }
+    if(n_inliers < FEATURES_THRESHOLD || magnitude > .1){
+      return std::make_pair(false, rigidT);
+    }
+    return std::make_pair(true, rigidT);
+}
+std::pair<bool, cv::Mat_<double>> RANSACFindRigidTransform(const cv::Mat_<cv::Vec3f> &points1, const cv::Mat_<cv::Vec3f> &points2)
+{
+  cv::Mat points1Homo;
+  cv::convertPointsToHomogeneous(points1, points1Homo);
+  int iterations = 100;
+  int min_n_points = 3;
+  int n_points = points1.size().height;
+  if(true){
+    std::ofstream outp1;
+    std::ofstream outp2;
+    outp1.open("run1/p1.csv");
+    outp2.open("run1/p2.csv");
+    for(int i = 0; i < n_points; i++) {
+      outp1 << points1(i) << "\n";
+      outp2 << points2(i) << "\n";
+    }
+  }
+  std::vector<int> range(n_points);
+  cv::Mat_<double> best;
+  int best_inliers = -1;
+  // inlier points should be projected within this many meters
+  float threshold = .02;
+  std::iota(range.begin(), range.end(), 0);
+  auto gen = std::mt19937{std::random_device{}()};
+  for(int i = 0; i < iterations; i++) {
+    std::shuffle(range.begin(), range.end(), gen);
+    cv::Mat_<cv::Vec3f> points1subset(min_n_points, 1, cv::Vec3f(0,0,0));
+    cv::Mat_<cv::Vec3f> points2subset(min_n_points, 1, cv::Vec3f(0,0,0));
+    for(int j = 0; j < min_n_points; j++) {
+      points1subset(j) = points1(range[j]);
+      points2subset(j) = points2(range[j]);
+    }
+    cv::Mat_<float> rigidT = FindRigidTransform(points1subset, points2subset);
+    cv::Mat_<float> rigidT_float = cv::Mat::eye(4, 4, CV_32F);
+    rigidT.convertTo(rigidT_float, CV_32F);
+    std::vector<int> inliers;
+    for(int j = 0; j < n_points; j++) {
+        cv::Mat_<float> t1_3d = rigidT_float * cv::Mat_<float>(points1Homo.at<cv::Vec4f>(j));
+        if(t1_3d(3) == 0) {
+          continue; // Avoid 0 division
+        }
+        float dx = (t1_3d(0)/t1_3d(3) - points2(j)[0]);
+        float dy = (t1_3d(1)/t1_3d(3) - points2(j)[1]);
+        float dz = (t1_3d(2)/t1_3d(3) - points2(j)[2]);
+        float square_dist = dx * dx + dy * dy + dz * dz;
+        if(square_dist < threshold * threshold){
+          inliers.push_back(j);
+        }
+    }
+    int n_inliers = inliers.size();
+    if(n_inliers > best_inliers) {
+      best_inliers = n_inliers;
+      best = rigidT;
+    }
+  }
+  // dbg(best_inliers);
+  if(best_inliers < FEATURES_THRESHOLD){
+    return std::make_pair(false, best);
+  }
+  return std::make_pair(true, best);
+}
+
+cv::Mat getWorldPoints(const cv::Mat &leftCameraProjection, const cv::Mat & rightCameraProjection,
+              std::vector<cv::Point2f> pointsLeft, std::vector<cv::Point2f> pointsRight) {
+    cv::Mat world_points, world_homogenous_points;
+    cv::triangulatePoints(leftCameraProjection, rightCameraProjection,
+                          pointsLeft, pointsRight, world_homogenous_points);
+    cv::convertPointsFromHomogeneous(world_homogenous_points.t(), world_points);
+    return world_points;
+}
+
+
 VisualOdometry::~VisualOdometry() {}
-std::tuple<bool, cv::Mat, cv::Mat> VisualOdometry::stereo_callback(const cv::Mat &imageLeft,
-                                      const cv::Mat &imageRight) {
-    std::tuple<bool, cv::Mat, cv::Mat> fail_result =
-        std::make_tuple(false, last_translation, last_rotation);
+std::pair<bool, cv::Mat_<double>> VisualOdometry::stereo_callback(
+      const cv::Mat &imageLeft, const cv::Mat &imageRight) {
+    std::pair<bool, cv::Mat> fail_result = std::make_pair(false,
+        cv::Mat::eye(4, 4, CV_64F));
     // Wait until we have at least two time steps of data
     // to begin predicting the change in pose.
     if (!frame_id) {
@@ -116,18 +315,21 @@ std::tuple<bool, cv::Mat, cv::Mat> VisualOdometry::stereo_callback(const cv::Mat
                      currentVOFeatures, pointsLeftT0, pointsRightT0,
                      pointsLeftT1, pointsRightT1);
 
-    // cv::Mat left_scene = displayPoints(imageLeftT0_, pointsLeftT0);
-    // cv::Mat right_scene = displayPoints(imageRightT0_, pointsRightT0);
+    cv::Mat left_scene = displayPoints(imageLeftT0_, pointsLeftT0);
+    cv::Mat right_scene = displayPoints(imageRightT0_, pointsRightT0);
     // Update current tracked points.
     for (unsigned int i = 0; i < currentVOFeatures.ages.size(); ++i) {
       currentVOFeatures.ages[i] += 1;
     }
+    currentVOFeatures.points = pointsLeftT1;
 
     imageLeftT0_ = imageLeftT1_;
     imageRightT0_ = imageRightT1_;
 
-    // Need at least 4 points for cameraToWorld to not crash.
-    if (pointsLeftT0.size() <= std::max(4, FEATURES_THRESHOLD)) {
+
+    displayTracking(left_scene, right_scene, pointsLeftT0, pointsRightT0);
+    // Won't be able to find a good rigid transform
+    if (pointsLeftT0.size() <= FEATURES_THRESHOLD) {
       frame_id++;
       dbgstr("Not enough points");
       return fail_result;
@@ -135,95 +337,38 @@ std::tuple<bool, cv::Mat, cv::Mat> VisualOdometry::stereo_callback(const cv::Mat
     // ---------------------
     // Triangulate 3D Points
     // ---------------------
-    cv::Mat world_points_T0, world_homogenous_points_T0;
-    cv::triangulatePoints(leftCameraProjection_, rightCameraProjection_,
-                          pointsLeftT0, pointsRightT0, world_homogenous_points_T0);
-    cv::convertPointsFromHomogeneous(world_homogenous_points_T0.t(), world_points_T0);
-    // ---------------------
-    // Tracking transfomation
-    // ---------------------
-
-    cv::Mat rotation = last_rotation.clone();
-    cv::Mat translation = last_translation.clone();
-    dbg(left_camera_matrix.depth());
     dbg(pointsLeftT0.size());
-    dbg(world_points_T0.depth());
-    dbg(world_points_T0.size());
-    dbg(rotation.depth());
-    dbg(translation.depth());
-    auto result = cameraToWorld(left_camera_matrix,
-        pointsLeftT1, world_points_T0, rotation, translation);
-    int n_inliers = result.first.size().height;
-    bool success = result.second;
-    std::vector<bool> is_ok(pointsLeftT1.size());
-    for(int i = 0; i < n_inliers; i++){
-      size_t inlier_index = result.first.at<int>(i);
-      is_ok[inlier_index] = true;
-    }
-    dbg(n_inliers);
-    // displayTracking(left_scene, right_scene, pointsLeftT0, pointsRightT0);
-    if (false){
-      // Tracking the points to the next frame is pretty bad, maybe we can
-      // use the transform? It doesn't seem to work that well though
-      cv::Mat world_points_T1;
-      // double type
-      cv::Mat inverse_t = getInverseTransform(rotation, translation);
-      inverse_t.convertTo(inverse_t, CV_32F);
-      cv::Mat world_homogenous_points_T1 = world_homogenous_points_T0.t() * inverse_t;
-      cv::convertPointsFromHomogeneous(world_homogenous_points_T1, world_points_T1);
-      // project back to the camera
-      cv::Mat rvec = cv::Mat::zeros(3, 1, CV_64F);
-      cv::Mat tvec = cv::Mat::zeros(3, 1, CV_64F);
-      cv::Mat distCoef = cv::Mat::zeros(4, 1, CV_64F);
-      cv::Mat pointsOut;
-
-      cv::projectPoints(world_points_T1, rvec, tvec, left_camera_matrix,
-            distCoef, pointsOut);
-      currentVOFeatures.points = pointsOut;
-      double proj_error = 0;
-      for(size_t i = 0; i < pointsLeftT1.size(); i++){
-        if(is_ok[i]){
-          proj_error += pow(pointsLeftT1[i].x - pointsOut.at<float>(i, 0), 2) +
-                    pow(pointsLeftT1[i].y - pointsOut.at<float>(i, 1), 2);
-        }
+    cv::Mat_<cv::Vec3f> world_points_T0 = getWorldPoints(leftCameraProjection_, rightCameraProjection_, pointsLeftT0, pointsRightT0);
+    cv::Mat_<cv::Vec3f> world_points_T1 = getWorldPoints(leftCameraProjection_, rightCameraProjection_, pointsLeftT1, pointsRightT1);
+    // Remove ridiculous pairs; robot won't move more even close to .1m/sec
+    std::vector<int> okLocs;
+    for(size_t i = 0; i < pointsLeftT0.size(); i++) {
+      if(cv::norm(world_points_T0(i)-world_points_T1(i)) < .1){
+        okLocs.push_back(i);
       }
-      dbg(proj_error);
-    } else {
-      currentVOFeatures.points = pointsLeftT1;
     }
-    deleteFeaturesWithFailureStatus(currentVOFeatures, is_ok);
-
-
-    cv::Mat rotation_rodrigues;
-    double translation_norm = cv::norm(translation);
-    cv::Rodrigues(rotation, rotation_rodrigues);
-    double angle = cv::norm(rotation_rodrigues, cv::NORM_L2);
-    // dbg(n_inliers);
-    if (n_inliers < FEATURES_THRESHOLD || !success) {
-      frame_id++;
-      dbgstr("Not enough inliers");
-      return fail_result;
+    cv::Mat_<cv::Vec3f> world_points_T0_filter(cv::Size(1, okLocs.size()), cv::Vec3f(0,0,0));
+    cv::Mat_<cv::Vec3f> world_points_T1_filter(cv::Size(1, okLocs.size()), cv::Vec3f(0,0,0));
+    for(size_t i = 0; i < okLocs.size(); i++) {
+      world_points_T0_filter(i) = world_points_T0(okLocs[i]);
+      world_points_T1_filter(i) = world_points_T0(okLocs[i]);
     }
 
-    // ------------------------------------------------
-    // Integrating
-    // ------------------------------------------------
-    if(translation_norm > .1 || angle > 0.5){
-      dbgstr("Movement too suspicious, not updating");
-      dbg(angle);
-      dbg(translation);
-      return fail_result;
+    // Find mapping from points from time 1 to time 0
+    // std::pair<bool, cv::Mat> result = FindRigidTransformRemovingNoise(world_points_T1, world_points_T0);
+    std::pair<bool, cv::Mat_<double>> result = RANSACFindRigidTransform(world_points_T1, world_points_T0);
+    cv::Mat_<double> rigidT = result.second;
+    double magnitude = 0;
+    for(int j = 0; j < 3; j++) {
+      magnitude += rigidT(j, 3) * rigidT(j, 3);
     }
-    cv::Mat xyz = frame_pose.col(3).clone();
-    cv::Mat R = frame_pose(cv::Rect(0, 0, 3, 3));
-    frame_id++;
-    last_translation = translation;
-    last_rotation = rotation;
-    // Translation and rotation from the coordinate frame of the
-    // world, which is projected onto the images by the input
-    // projection matricies. 
-    // TODO: Translation is sus af! one dimension is undedetermined!
-    return std::make_tuple(true, translation, rotation);
+    cv::Mat rodrigues;
+    cv::Rodrigues(rigidT.colRange(0,3).rowRange(0, 3), rodrigues);
+    double angle = cv::norm(rodrigues, cv::NORM_L2);
+    if(magnitude > .1 || angle > .5){
+      result.first = false;
+    }
+    return result;
   }
 
   // --------------------------------
@@ -373,31 +518,32 @@ std::pair<cv::Mat, bool> visual_odometry::cameraToWorld(
 void VisualOdometry::matchingFeatures(
     const cv::Mat &imageLeftT0, const cv::Mat &imageRightT0,
     const cv::Mat &imageLeftT1, const cv::Mat &imageRightT1,
-    FeatureSet &currentVOFeatures, std::vector<cv::Point2f> &pointsLeftT0,
+    FeatureSet &VOFeatures, std::vector<cv::Point2f> &pointsLeftT0,
     std::vector<cv::Point2f> &pointsRightT0,
     std::vector<cv::Point2f> &pointsLeftT1,
     std::vector<cv::Point2f> &pointsRightT1) {
   
   // Update feature set with detected features from the first image.
-  currentVOFeatures.appendFeaturesFromImage(imageLeftT0, FAST_THRESHOLD);
-  if (currentVOFeatures.size() < PRE_MATCHING_FEATURE_THRESHOLD) {
-      std::cout << "using lower threshold, only got " << currentVOFeatures.size() << " features" << std::endl;
-      // Just append a bunch of random features.
-    currentVOFeatures.appendFeaturesFromImage(imageLeftT0, FAST_THRESHOLD / 4);
+  VOFeatures.appendFeaturesFromImage(imageLeftT0, FAST_THRESHOLD);
+  if (VOFeatures.size() < PRE_MATCHING_FEATURE_THRESHOLD) {
+    dbg("Adding more features")
+    // Lower criteria, we just want more features.
+    VOFeatures.appendFeaturesFromImage(imageLeftT0, FAST_THRESHOLD / 2);
   }
 
   // --------------------------------------------------------
   // Feature tracking using KLT tracker, bucketing and circular matching.
   // --------------------------------------------------------
 
-  pointsLeftT0 = currentVOFeatures.points;
+  pointsLeftT0 = VOFeatures.points;
   circularMatching(imageLeftT1, imageRightT1, 
               pointsLeftT0, pointsRightT0, pointsLeftT1, pointsRightT1,
-                    currentVOFeatures);
+                    VOFeatures);
   std::vector<bool> is_ok(pointsRightT0.size(), true);
   // Check if circled back points are in range of original points.
   // Only keep points that were matched correctly and are in the image bounds.
   for(unsigned int i = 0; i < is_ok.size(); i++) {
+    // check boundary conditions
     if((pointsLeftT0[i].x < 0) || (pointsLeftT0[i].y < 0) ||
             (pointsLeftT0[i].y >= imageLeftT0.rows) || (pointsLeftT0[i].x >= imageLeftT0.cols) ||
             (pointsLeftT1[i].x < 0) || (pointsLeftT1[i].y < 0) ||
@@ -406,11 +552,15 @@ void VisualOdometry::matchingFeatures(
             (pointsRightT0[i].y >= imageRightT0.rows) || (pointsRightT0[i].x >= imageRightT0.cols) ||
             (pointsRightT1[i].x < 0) || (pointsRightT1[i].y < 0) ||
             (pointsRightT1[i].y >= imageRightT1.rows) || (pointsRightT1[i].x >= imageRightT1.cols)
+            // Since the images are rectified, all the matched points ought to be
+            // horizontal. It's huge rn because my images are not rectified >:(
+            // || (abs(pointsLeftT0[i].y - pointsRightT0[i].y) > 40) ||
+            // (abs(pointsLeftT0[i].y - pointsRightT1[i].y) > 40)
             ) {
         is_ok[i] = false;
     }
   }
-  deleteFeaturesWithFailureStatus(currentVOFeatures, is_ok);
+  deleteFeaturesWithFailureStatus(VOFeatures, is_ok);
   deletePointsWithFailureStatus(pointsLeftT0, is_ok);
   deletePointsWithFailureStatus(pointsLeftT1, is_ok);
   deletePointsWithFailureStatus(pointsRightT0, is_ok);

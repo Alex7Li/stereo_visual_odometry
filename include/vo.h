@@ -35,6 +35,8 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <random>
+#include<algorithm>
 #define dbg(x) std::cerr << " >>> " << #x << " = " << x << std::endl;
 #define dbga(a) std::cerr << " >>> " << #a << " = "; for(unsigned int xtw = 0; xtw < a.size(); xtw++) std::cerr << a[xtw] << " "; std::cerr << std::endl;
 #define dbgstr(a) std::cerr << " >>> " << a << std::endl;
@@ -247,19 +249,7 @@ private:
   std::vector<cv::Mat> lastLeftPyramid;
   std::vector<cv::Mat> lastRightPyramid;
 
-  /**
-   * @brief In case of failure, just return the last value rotation
-   * and translation
-  */
-  cv::Mat last_rotation = cv::Mat::eye(3, 3, CV_64F);
-  cv::Mat last_translation = cv::Mat::zeros(3, 1, CV_64F);
-
 public:
-  /**
-   * @brief The current estimated pose of the robot.
-   * Just public for testing
-   */
-  cv::Mat frame_pose = cv::Mat::eye(4, 4, CV_64F);
   /**
    * @brief Construct a new Visual Odometry object
    *
@@ -282,10 +272,18 @@ public:
    * success: A flag, false if we could not produce a useful result (because not
    * enough features were detected or something went wrong
    * and the prediction is very extreme).
-   * translation, rotation: The 3x1 translation and 3x3 rotation matrix of the robot,
-   * relative to the previous frame.
+   * transform: Transform to move the robot from it's position in the last time step
+   * onto the current time step. If the robot's pose is initially the 4x4 matrix
+   * of rotation and translation vector
+   * frame_pose =
+   * R R R Tx
+   * R R R Ty
+   * R R R Tz
+   * 0 0 0 1
+   * Then the pose after a time step will be frame_pose @ transform where @ denotes
+   * matrix multiplication.
    */
-  std::tuple<bool, cv::Mat, cv::Mat> stereo_callback(const cv::Mat &image_left, const cv::Mat &image_right);
+  std::pair<bool, cv::Mat_<double>> stereo_callback(const cv::Mat &image_left, const cv::Mat &image_right);
 
   /**
    * @brief Given four images and the set of features used in the last
@@ -298,13 +296,13 @@ public:
    * 
    * @param image[(Left)|(Right)]T[01]: Images from the left/right cameras at the last/current timestep.
    * @param pyramid[(Left)|(Right)]T0: Cached optical image pyramid for the first two images.
-   * @param currentVOFeatures: The set of currently tracked features, stored as a position in the LeftT0 image, will
+   * @param VOFeatures: The set of currently tracked features, stored as a position in the LeftT0 image, will
    * be updated with newly detected features.
    * @param points[(Left)|(Right)][01]: references to 4 empty vectors of points to fill up with feature positions.
    */
   void matchingFeatures(const cv::Mat &imageLeftT0, const cv::Mat &imageRightT0,
                         const cv::Mat &imageLeftT1, const cv::Mat &imageRightT1,
-                        FeatureSet &currentVOFeatures,
+                        FeatureSet &VOFeatures,
                         std::vector<cv::Point2f> &pointsLeftT0,
                         std::vector<cv::Point2f> &pointsRightT0,
                         std::vector<cv::Point2f> &pointsLeftT1,
