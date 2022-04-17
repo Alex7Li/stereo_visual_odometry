@@ -9,23 +9,30 @@ with open(foldername + '/result.csv') as f:
     f.readline()
     _, _, _, x_0, y_0 = map(float, f.readline().split(','))
     for line in f.readlines():
-        z,y,x,gtx,gty = map(float, line.split(','))
+        x,y,z,gtx,gty = map(float, line.split(','))
         
-        xs.append(-x)
+        xs.append(x)
         ys.append(y)
         zs.append(z)
         gtxs.append(gtx - x_0)
         gtys.append(gty - y_0)
-# for i in range(128):
-#     dd = np.linalg.norm([xs[i + 1] - xs[i],ys[i + 1]-ys[i],zs[i + 1]-zs[i]])
-#     d2 = np.linalg.norm([gtxs[i + 1] - gtxs[i],gtys[i + 1]-gtys[i]])
-#     print(f'dd: {dd} d2: {d2}')
+# Initial angle of the cameras is to face down at 26 degrees
+theta = -26 / 180 * math.pi
+Ryz = np.array([
+        [1,0,0],
+        [0, np.cos(theta), -np.sin(theta)],
+        [0, np.sin(theta), np.cos(theta)],
+    ])
+for i in range(len(xs)):
+    xs[i], ys[i], zs[i] = Ryz @ np.array([xs[i], ys[i], zs[i]])
+    # gt: (x,y,z) = (backward, side, up) | robot: (x,y,z) = (side, up, forward)
+    xs[i], ys[i], zs[i] =  -zs[i], -xs[i], ys[i]
 
 colors = cm.rainbow(np.linspace(0, 1, len(ys)))
 fig = plt.figure()
 ax = fig.add_subplot(projection='3d')
 ax.scatter(xs, ys, zs, color=colors)
-ax.scatter(gtxs, gtys, [0 for _ in gtxs], color='b')
+ax.scatter(gtxs, gtys, [0 for _ in gtxs], color=colors)
 ax.axes.set_xlim3d(left=-4.5, right=0) 
 ax.axes.set_ylim3d(bottom=-2, top=2)
 ax.axes.set_zlim3d(bottom=-2, top=2)
@@ -39,4 +46,3 @@ print(f"Absolute Error={distance_from_goal:.4f}, Goal distance={goal_distance:.4
       f"Total D={np.sqrt(np.abs(xs[-1]**2 + ys[-1]**2 + zs[-1]**2))}"
       f"End={xs[-1]:.2f}, {ys[-1]:.2f}, {zs[-1]:.2f}")
 plt.show()
-

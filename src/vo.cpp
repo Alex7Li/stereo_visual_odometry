@@ -145,12 +145,6 @@ std::tuple<bool, cv::Mat, cv::Mat> VisualOdometry::stereo_callback(const cv::Mat
 
     cv::Mat rotation = last_rotation.clone();
     cv::Mat translation = last_translation.clone();
-    dbg(left_camera_matrix.depth());
-    dbg(pointsLeftT0.size());
-    dbg(world_points_T0.depth());
-    dbg(world_points_T0.size());
-    dbg(rotation.depth());
-    dbg(translation.depth());
     auto result = cameraToWorld(left_camera_matrix,
         pointsLeftT1, world_points_T0, rotation, translation);
     int n_inliers = result.first.size().height;
@@ -222,7 +216,6 @@ std::tuple<bool, cv::Mat, cv::Mat> VisualOdometry::stereo_callback(const cv::Mat
     // Translation and rotation from the coordinate frame of the
     // world, which is projected onto the images by the input
     // projection matricies. 
-    // TODO: Translation is sus af! one dimension is undedetermined!
     return std::make_tuple(true, translation, rotation);
   }
 
@@ -357,7 +350,7 @@ std::pair<cv::Mat, bool> visual_odometry::cameraToWorld(
   cv::Mat rvec;
   cv::Rodrigues(rotation, rvec);
   int iterationsCount = 100; // number of Ransac iterations.
-  float reprojectionError = .1; // maximum allowed distance to consider it an inlier.
+  float reprojectionError = 6; // maximum allowed distance to consider it an inlier.
   float confidence = 0.9999; // RANSAC successful confidence.
   bool useExtrinsicGuess = true;
   int flags = cv::SOLVEPNP_ITERATIVE;

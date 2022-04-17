@@ -94,7 +94,7 @@ const int FEATURES_PER_BUCKET = 1;
 /**
  * @brief Minimum number of features before giving up on VO
  */
-const int FEATURES_THRESHOLD = 20;
+const int FEATURES_THRESHOLD = 15;
 
 /**
  * @brief Minimum number of features before the
