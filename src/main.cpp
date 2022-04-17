@@ -284,19 +284,20 @@ void test_cameraToWorld() {
                         {0., 1.0, 0.0},
                         {0.0, 0.0, 1.0}};
   cv::Mat projMatrl(3, 3, CV_32F, camera_matrix);
-  cv::Mat world_point_x(cv::Size(1, 27), CV_32F);
-  cv::Mat world_point_y(cv::Size(1, 27), CV_32F);
-  cv::Mat world_point_z(cv::Size(1, 27), CV_32F);
-  std::vector<cv::Point2f> camera_points(27);
+  cv::Mat world_point_x(cv::Size(1, 18), CV_32F);
+  cv::Mat world_point_y(cv::Size(1, 18), CV_32F);
+  cv::Mat world_point_z(cv::Size(1, 18), CV_32F);
+  std::vector<cv::Point2f> camera_points(18);
+  int ind = 0;
   for(int i = -1; i <= 1; i++){
     for(int j = -1; j <= 1; j++){
-      for(int k = -1; k <= 1; k++){
-        int ind = i + 1 + (j + 1) * 3 + (k + 1) * 9;
-        world_point_x.at<float>(0, ind) = i * (k+1.0)/2;
-        world_point_y.at<float>(0, ind) = j * (k+1.0)/2;
+      for(int k = 5; k <= 6; k++){
+        world_point_x.at<float>(0, ind) = i;
+        world_point_y.at<float>(0, ind) = j;
         world_point_z.at<float>(0, ind) = float(k);
-        camera_points[ind] = cv::Point2f(i, j);
-      }
+        camera_points[ind] = cv::Point2f(float(i)/ (k + 1), float(j)/ (k + 1));
+        ind += 1;
+      } 
     }
   }
   std::vector<cv::Mat> world_point_channels;
@@ -305,7 +306,6 @@ void test_cameraToWorld() {
   world_point_channels.push_back(world_point_z);
   cv::Mat world_points;
   cv::merge(world_point_channels, world_points);
-
   cv::Mat rotation = cv::Mat::eye(3, 3, CV_64F);
   cv::Mat translation = cv::Mat::zeros(3, 1, CV_64F);
   auto result = cameraToWorld(projMatrl,
@@ -315,7 +315,7 @@ void test_cameraToWorld() {
   int n_inliers = result.first.size().height;
   dbg(n_inliers);
   for(int i = 0; i < 3; i++){
-    for(int j = 0; j < 3; j++){
+    for(int j = 0; j < 3; j++){ 
       if(i==j){
         assert(abs(rotation.at<double>(i,j) - 1) < 1e-8);
       } else {
