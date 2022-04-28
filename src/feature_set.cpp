@@ -149,7 +149,7 @@ void FeatureSet::filterByBucketLocationInternal(const cv::Mat & image, const int
     {
         for (int buckets_idx_width = 0; buckets_idx_width < buckets_along_width; buckets_idx_width++)
         {
-            buckets_idx = buckets_idx_height*buckets_along_width + buckets_idx_width;
+            buckets_idx = buckets_idx_height * buckets_along_width + buckets_idx_width;
             FeatureSet bucket_features = buckets[buckets_idx].features;
             points.insert(points.end(), bucket_features.points.begin(), bucket_features.points.end());
             ages.insert(ages.end(), bucket_features.ages.begin(), bucket_features.ages.end());

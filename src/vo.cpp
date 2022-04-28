@@ -78,22 +78,13 @@ VisualOdometry::VisualOdometry(const cv::Mat leftCameraProjection,
       (cv::Mat_<float>(3, 3) << leftCameraProjection_.at<float>(0, 0), leftCameraProjection_.at<float>(0, 1), leftCameraProjection_.at<float>(0, 2),
         leftCameraProjection_.at<float>(1, 0), leftCameraProjection_.at<float>(1, 1), leftCameraProjection_.at<float>(1, 2),
         leftCameraProjection_.at<float>(2, 0), leftCameraProjection_.at<float>(2, 1), leftCameraProjection_.at<float>(2, 2));
-
-  // Initial angle of the cameras is to face down at 26 degrees
-  // double initial_pose[4][4] = {
-  //   {0.89879405, 0, 0.43837115, 0},
-  //   {0, 1, 0, 0},
-  //   {-0.43837115, 0, 0.89879405, 0},
-  //   {0, 0, 0, 1},
-  // };
-  // std::memcpy(frame_pose.data, initial_pose, sizeof(CV_64F) * 16);
 }
 
 VisualOdometry::~VisualOdometry() {}
-std::tuple<bool, cv::Mat, cv::Mat> VisualOdometry::stereo_callback(const cv::Mat &imageLeft,
+std::pair<bool, cv::Mat_<double>> VisualOdometry::stereo_callback(const cv::Mat &imageLeft,
                                       const cv::Mat &imageRight) {
-    std::tuple<bool, cv::Mat, cv::Mat> fail_result =
-        std::make_tuple(false, last_translation, last_rotation);
+    std::pair<bool, cv::Mat> fail_result =
+        std::make_pair(false, last_transform);
     // Wait until we have at least two time steps of data
     // to begin predicting the change in pose.
     if (!frame_id) {
@@ -128,7 +119,6 @@ std::tuple<bool, cv::Mat, cv::Mat> VisualOdometry::stereo_callback(const cv::Mat
 
     // Need at least 4 points for cameraToWorld to not crash.
     if (pointsLeftT0.size() <= std::max(4, FEATURES_THRESHOLD)) {
-      frame_id++;
       dbgstr("Not enough points");
       return fail_result;
     }
@@ -143,48 +133,22 @@ std::tuple<bool, cv::Mat, cv::Mat> VisualOdometry::stereo_callback(const cv::Mat
     // Tracking transfomation
     // ---------------------
 
-    cv::Mat rotation = last_rotation.clone();
-    cv::Mat translation = last_translation.clone();
     auto result = cameraToWorld(left_camera_matrix,
         pointsLeftT1, world_points_T0, rotation, translation);
     int n_inliers = result.first.size().height;
     bool success = result.second;
+    if (n_inliers < FEATURES_THRESHOLD || !success) {
+      dbgstr("Not enough inliers");
+      return fail_result;
+    }
+
     std::vector<bool> is_ok(pointsLeftT1.size());
     for(int i = 0; i < n_inliers; i++){
       size_t inlier_index = result.first.at<int>(i);
       is_ok[inlier_index] = true;
     }
-    dbg(n_inliers);
     // displayTracking(left_scene, right_scene, pointsLeftT0, pointsRightT0);
-    if (false){
-      // Tracking the points to the next frame is pretty bad, maybe we can
-      // use the transform? It doesn't seem to work that well though
-      cv::Mat world_points_T1;
-      // double type
-      cv::Mat inverse_t = getInverseTransform(rotation, translation);
-      inverse_t.convertTo(inverse_t, CV_32F);
-      cv::Mat world_homogenous_points_T1 = world_homogenous_points_T0.t() * inverse_t;
-      cv::convertPointsFromHomogeneous(world_homogenous_points_T1, world_points_T1);
-      // project back to the camera
-      cv::Mat rvec = cv::Mat::zeros(3, 1, CV_64F);
-      cv::Mat tvec = cv::Mat::zeros(3, 1, CV_64F);
-      cv::Mat distCoef = cv::Mat::zeros(4, 1, CV_64F);
-      cv::Mat pointsOut;
-
-      cv::projectPoints(world_points_T1, rvec, tvec, left_camera_matrix,
-            distCoef, pointsOut);
-      currentVOFeatures.points = pointsOut;
-      double proj_error = 0;
-      for(size_t i = 0; i < pointsLeftT1.size(); i++){
-        if(is_ok[i]){
-          proj_error += pow(pointsLeftT1[i].x - pointsOut.at<float>(i, 0), 2) +
-                    pow(pointsLeftT1[i].y - pointsOut.at<float>(i, 1), 2);
-        }
-      }
-      dbg(proj_error);
-    } else {
-      currentVOFeatures.points = pointsLeftT1;
-    }
+    currentVOFeatures.points = pointsLeftT1;
     deleteFeaturesWithFailureStatus(currentVOFeatures, is_ok);
 
 
@@ -192,31 +156,16 @@ std::tuple<bool, cv::Mat, cv::Mat> VisualOdometry::stereo_callback(const cv::Mat
     double translation_norm = cv::norm(translation);
     cv::Rodrigues(rotation, rotation_rodrigues);
     double angle = cv::norm(rotation_rodrigues, cv::NORM_L2);
-    // dbg(n_inliers);
-    if (n_inliers < FEATURES_THRESHOLD || !success) {
-      frame_id++;
-      dbgstr("Not enough inliers");
-      return fail_result;
-    }
 
-    // ------------------------------------------------
-    // Integrating
-    // ------------------------------------------------
     if(translation_norm > .1 || angle > 0.5){
       dbgstr("Movement too suspicious, not updating");
       dbg(angle);
       dbg(translation);
       return fail_result;
     }
-    cv::Mat xyz = frame_pose.col(3).clone();
-    cv::Mat R = frame_pose(cv::Rect(0, 0, 3, 3));
-    frame_id++;
-    last_translation = translation;
-    last_rotation = rotation;
-    // Translation and rotation from the coordinate frame of the
-    // world, which is projected onto the images by the input
-    // projection matricies. 
-    return std::make_tuple(true, translation, rotation);
+    cv::Mat transform = visual_odometry::getInverseTransform(rotation, translation);
+    last_transform = transform;
+    return std::make_pair(true, transform);
   }
 
   // --------------------------------
@@ -267,7 +216,7 @@ void VisualOdometry::circularMatching(
     std::vector<uchar> status3;
     std::vector<cv::Mat> pyramidl1;
     std::vector<cv::Mat> pyramidr1;
-    double minEigThreshold = 0.0001;
+    double minEigThreshold = 0.01;
     // Perform the circular matching in the order
     // leftT0 -> leftT1 -> rightT1 -> rightT0 -> leftT0.
     // There is a reason to go in this order rather than
@@ -290,7 +239,7 @@ void VisualOdometry::circularMatching(
     // Remove all features that optical flow failed to track.
     std::vector<bool> is_ok = findClosePoints(pointsLeftT0, points_left_T0_circle, .15);
     for (size_t i = 0; i < is_ok.size(); i++) {
-        is_ok[i] = status0[i] || status1[i] || status2[i] || status3[i] || is_ok[i];
+        is_ok[i] = status0[i] && status1[i] && status2[i] && status3[i] && is_ok[i];
     }
     lastLeftPyramid = pyramidl1;
     lastRightPyramid = pyramidr1;

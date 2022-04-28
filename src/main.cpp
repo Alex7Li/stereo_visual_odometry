@@ -8,6 +8,16 @@
 #include "vo.h"
 using namespace visual_odometry;
 
+bool isRotationMatrix(const cv::Mat &R)
+{
+    cv::Mat Rt;
+    transpose(R, Rt);
+    cv::Mat shouldBeIdentity = Rt * R;
+    cv::Mat I = cv::Mat::eye(3,3, shouldBeIdentity.type());
+     
+    return  norm(I, shouldBeIdentity) < 1e-6;
+}
+
 std::pair<cv::Mat, cv::Mat> readImages(const std::string folderName, int i) {
     std::stringstream lFileName;
     std::stringstream rFileName;
@@ -120,25 +130,57 @@ void test_bucket_nonempty() {
   assert(b.features.strengths[2] == 50);
 }
 
+cv::Mat_<unsigned char> makeEmptyImageWithSquare(int n_rows, int n_cols) {
+    cv::Mat_<unsigned char> image(n_rows, n_cols, CV_8UC1);
+    for(int i = 0; i < n_rows; i++){
+      for(int j = 0; j < n_cols; j++){
+          image[i][j] = 0;
+      }
+    }
+    return image;
+}
+void addTriangle(cv::Mat_<unsigned char> image, int x, int y, int r) {
+    // FAST somehow is bad at detecting most geometric shapes so we do this
+    for(int i = -r; i <= r; i++) {
+      for(int j = 0; j <= r; j++) {
+        if(abs(i) <= r - abs(j)){
+          image[i + y][j + x] = (unsigned char)120;
+        }
+      }
+    }
+    // a little hole for fast to see a feature
+    image[y][x] = 0;
+}
+
 void test_featureset() {
   FeatureSet fs;
-  const cv::Mat sample_image =  cv::imread("run1/left/frame000000.png", cv::IMREAD_GRAYSCALE);
   assert(fs.size() == 0);
-  fs.appendFeaturesFromImage(sample_image, FAST_THRESHOLD);
+
+  const cv::Mat sample_image = makeEmptyImageWithSquare(300, 200);
+  for(int i = 0; i <= 10; i++){
+    addTriangle(sample_image, 20, (i + 1) * 20, 8);
+  }
+  fs.appendFeaturesFromImage(sample_image, 1);
+  // displayPoints(sample_image, fs.points);
+  // cv::imshow("vis ", sample_image);  
+  // cv::waitKey(0.01);
+  dbg(fs.size());
   for(int age: fs.ages) {
     assert(age == 0);
   }
   for(int strength: fs.strengths){
     // assert(strength >= FAST_THRESHOLD);
-    assert(strength <= 100);
+    assert(strength <= 128);
   }
-  assert(fs.size() >= 10); /* Should detect quite a few points, I got 125 */
+  dbga(fs.strengths);
+  dbga(fs.points);
+  assert(fs.size() == 11);
   fs.filterByBucketLocationInternal(sample_image, 1, 1, 0, 7); /* Put it all in one bucket */
   assert(fs.size() == 7);
 }
 void test_featureset_filter() {
   FeatureSet fs;
-  const cv::Mat sample_image =  cv::imread("run1/left/frame000000.png", cv::IMREAD_GRAYSCALE);
+  const cv::Mat sample_image = makeEmptyImageWithSquare(300, 300);
   const int image_rows = sample_image.rows;
   const int image_cols = sample_image.cols;
   const int bucket_height = (image_rows +  1) / 2;
@@ -189,16 +231,24 @@ void test_circularMatching() {
     float right_P[3][4] = {{361.49914, 0., 345.32559, -22.5428},
                               {0., 361.49914, 174.00476, 0.0},
                               {0.0, 0.0, 1.0, 0.0}};
-    cv::Mat projMatrl(3, 4, CV_32F, left_P);
-    cv::Mat projMatrr(3, 4, CV_32F, right_P);
+  const cv::Mat iL0 = makeEmptyImageWithSquare(300, 300);
+  const cv::Mat iR0 = makeEmptyImageWithSquare(300, 300);
+  const cv::Mat iL1 = makeEmptyImageWithSquare(300, 300);
+  const cv::Mat iR1 = makeEmptyImageWithSquare(300, 300);
+  for(int i = 0; i <= 10; i++){
+    for(int j = 0; j <= 10; j++){
+      addTriangle(iL0, (j + 1) * 20, (i + 1) * 20, 8);
+      addTriangle(iL1, (j + 1) * 20 + 5, (i + 1) * 20, 8);
+      addTriangle(iR0, (j + 1) * 20, (i + 1) * 20 + 5, 8);
+      addTriangle(iR1, (j + 1) * 20 + 5, (i + 1) * 20 + 5, 8);
+    }
+  }
+  cv::imshow("image ", iL0);
+  cv::waitKey(0.01);
+  cv::Mat projMatrl(3, 4, CV_32F, left_P);
+  cv::Mat projMatrr(3, 4, CV_32F, right_P);
   VisualOdometry vo(projMatrl, projMatrr);
   std::vector<cv::Point2f> pl0, pr0, pl1, pr1, pret;
-  auto t0 = readImages("run1", 30);
-  auto t1 = readImages("run1", 31);
-  cv::Mat iL0 = t0.first;
-  cv::Mat iR0 = t0.second;
-  cv::Mat iL1 = t1.first;
-  cv::Mat iR1 = t1.second;
   vo.stereo_callback(iL0,iR0);
   FeatureSet fs;
   fs.appendFeaturesFromImage(iL0, FAST_THRESHOLD);
@@ -214,87 +264,28 @@ void test_circularMatching() {
   assert(pl1.size() == n_points);
   assert(pr0.size() == n_points);
   assert(pr1.size() == n_points);
-  assert(n_points == 148);
+  assert(n_points == 121);
 }
-
-// void test_deleteFeaturesWithFailureStatus() {
-//   std::vector<cv::Point2f> pl0, pr0, pl1, pr1, pret;
-//   auto t0 = readImages("run1", 0);
-//   auto t1 = readImages("run1", 1);
-//   cv::Mat iL0 = t0.first;
-//   cv::Mat iR0 = t0.second;
-//   cv::Mat iL1 = t1.first;
-//   cv::Mat iR1 = t1.second;
-//   FeatureSet fs;
-//   fs.appendFeaturesFromImage(iL0, FAST_THRESHOLD);
-//   pl0 = fs.points;
-//   circularMatching(iL0, iR0, iL1, iR1, pl0, pr0, pl1, pr1, pret);
-//   std::vector<int> okStrengths, okAges;
-//   std::vector<cv::Point2f> okPoints;
-//   for(unsigned int i = 0; i < status.size(); i++){
-//       fs.ages[i] = i;
-//       if(status[i]){
-//         okPoints.push_back(fs.points[i]);
-//         okStrengths.push_back(fs.strengths[i]);
-//         okAges.push_back(fs.ages[i]);
-//       }
-//   }
-//   std::vector<std::vector<cv::Point2f>> v = {pl0, pr0, pl1, pr1};
-//   deleteFeaturesAndPointsWithFailureStatus(v, pret, fs, status);
-//   assert(fs.strengths.size() == okPoints.size());
-//   assert(fs.points.size() == okPoints.size());
-//   assert(fs.ages.size() == okPoints.size());
-//   for(unsigned int i = 0; i < okPoints.size(); i++){
-//     assert(okPoints[i] == fs.points[i]);
-//     assert(okStrengths[i] == fs.strengths[i]);
-//     assert(okAges[i] == fs.ages[i]);
-//   }
-//   assert(pl0.size() == okPoints.size());
-//   assert(pl1.size() == okPoints.size());
-//   assert(pr0.size() == okPoints.size());
-//   assert(pr1.size() == okPoints.size());
-//   assert(pret.size() == okPoints.size());
-//   // visualize
-//   cv::Mat rgbimg = cv::imread("run1/left/frame000000.png", cv::IMREAD_COLOR);
-//   for(int r = 0; r < t0.first.rows; r++) {
-//     for(int c = 0; c < t0.first.cols; c++) {
-//       uint8_t intensity = iL0.at<uint8_t>(r, c);
-//       cv::Vec3b color = {intensity, intensity, intensity};
-//       rgbimg.at<cv::Vec3b>(r, c) = color;
-//     }
-//   }
-//   for(cv::Point2f p : pret){
-//       cv::Vec3b& color = rgbimg.at<cv::Vec3b>(p.y, p.x);
-//       color[0] = 255;
-//       color[1] = 0;
-//       color[2] = 0;
-//       rgbimg.at<cv::Vec3b>(p.y, p.x) = color;
-//   }
-//   const std::string filename = "run1/out.png";
-//   bool success = cv::imwrite(filename, rgbimg);
-//   if(!success) {
-//     dbgstr("failed to write image");
-//   }else{
-//     dbgstr("wrote image");
-//   }
-// }
 
 void test_cameraToWorld() {
   float camera_matrix[3][3] = {{1.0, 0., 0.0},
                         {0., 1.0, 0.0},
                         {0.0, 0.0, 1.0}};
   cv::Mat projMatrl(3, 3, CV_32F, camera_matrix);
-  cv::Mat world_point_x(cv::Size(1, 18), CV_32F);
-  cv::Mat world_point_y(cv::Size(1, 18), CV_32F);
-  cv::Mat world_point_z(cv::Size(1, 18), CV_32F);
-  std::vector<cv::Point2f> camera_points(18);
+  int n_points = 27;
+  cv::Mat_<float> world_point_x(cv::Size(1, n_points));
+  cv::Mat_<float> world_point_y(cv::Size(1, n_points));
+  cv::Mat_<float> world_point_z(cv::Size(1, n_points));
+  std::vector<cv::Point2f> camera_points(n_points);
   int ind = 0;
   for(int i = -1; i <= 1; i++){
     for(int j = -1; j <= 1; j++){
-      for(int k = 5; k <= 6; k++){
-        world_point_x.at<float>(0, ind) = i;
-        world_point_y.at<float>(0, ind) = j;
-        world_point_z.at<float>(0, ind) = float(k);
+      for(int k = 5; k <= 7; k++){
+        // there should be a 90 degree rotation along the xy plane
+        world_point_x(0, ind) = -j;
+        world_point_y(0, ind) = i;
+        world_point_z(0, ind) = k;
+        // increase k by 1, so there should be a shift in the z direction by 1.
         camera_points[ind] = cv::Point2f(float(i)/ (k + 1), float(j)/ (k + 1));
         ind += 1;
       } 
@@ -310,24 +301,25 @@ void test_cameraToWorld() {
   cv::Mat translation = cv::Mat::zeros(3, 1, CV_64F);
   auto result = cameraToWorld(projMatrl,
       camera_points, world_points, rotation, translation);
-  dbg(rotation);
-  dbg(translation);
   int n_inliers = result.first.size().height;
-  dbg(n_inliers);
-  for(int i = 0; i < 3; i++){
-    for(int j = 0; j < 3; j++){ 
-      if(i==j){
+  assert(abs(translation.at<double>(0)) < 1e-6);
+  assert(abs(translation.at<double>(1)) < 1e-6);
+  assert(abs(translation.at<double>(2) - 1) < 1e-6);
+  for(int i = 0; i < 3; i++) {
+    for(int j = 0; j < 3; j++) {
+      if (i + j == 4) {
+        assert(abs(rotation.at<double>(i,j) - 1) < 1e-8);
+      } else if(i == 1 and j == 0) {
+        assert(abs(rotation.at<double>(i,j) + 1) < 1e-8);
+      } else if(i == 0 and j == 1) {
         assert(abs(rotation.at<double>(i,j) - 1) < 1e-8);
       } else {
         assert(abs(rotation.at<double>(i,j)) < 1e-8);
       }
     }
   }
-  assert(abs(translation.at<double>(0)) < 1e-8);
-  assert(abs(translation.at<double>(1)) < 1e-8);
-  assert(abs(translation.at<double>(2) + 2) < 1e-8);
   assert(result.second);
-  assert(n_inliers == 27); // WHY IS THIS 11 not 27???
+  assert(n_inliers == n_points);
 }
 
 void test_goes_forward() {
@@ -352,16 +344,6 @@ void run_tests() {
   std::cout << "ALL TESTS PASS" << std::endl;
   // assert(false);
   // std::cout << "NEVERMIND ASSERTS WERE JUST DISABLED" << std::endl;
-}
-
-bool isRotationMatrix(const cv::Mat &R)
-{
-    cv::Mat Rt;
-    transpose(R, Rt);
-    cv::Mat shouldBeIdentity = Rt * R;
-    cv::Mat I = cv::Mat::eye(3,3, shouldBeIdentity.type());
-     
-    return  norm(I, shouldBeIdentity) < 1e-6;
 }
 
 // /usr/bin/clang++ -fdiagnostics-color=always -g /home/alex/git/stereo_visual_odometry/src/main.cpp -o /home/alex/git/stereo_visual_odometry/src/main `pkg-config opencv --cflags --libs` -v
@@ -413,7 +395,10 @@ int main(int argc, char** argv) {
     cv::Mat projMatrl(3, 4, CV_32F, left_P);
     cv::Mat projMatrr(3, 4, CV_32F, right_P);
     VisualOdometry vo(projMatrl, projMatrr);
-    cv::Mat frame_pose = vo.frame_pose;
+    /**
+     * @brief The current estimated pose of the robot.
+     */
+    cv::Mat frame_pose = cv::Mat::eye(4, 4, CV_64F);
     for(int i = 0; i < N_FRAMES; i++) {
       std::cout << "Frame " << i << ": ";
       double gtx = 0;
@@ -429,12 +414,10 @@ int main(int argc, char** argv) {
         gty = std::stod(ystr);
       }
       std::pair<cv::Mat, cv::Mat> images = readImages(folderName, i);
-      std::tuple<bool, cv::Mat, cv::Mat> out =  vo.stereo_callback(images.first, images.second);
-      // bool success = std::get<0>(out);
-      cv::Mat translation = std::get<1>(out);
-      cv::Mat rotation = std::get<2>(out);
-      assert(isRotationMatrix(rotation));
-      frame_pose = frame_pose * visual_odometry::getInverseTransform(rotation, translation);
+      std::pair<bool, cv::Mat> out =  vo.stereo_callback(images.first, images.second);
+      // bool success = out.first;
+      cv::Mat transform = out.second;
+      frame_pose = frame_pose * transform;
       double x = frame_pose.col(3).at<double>(0);
       double y = frame_pose.col(3).at<double>(1);
       double z = frame_pose.col(3).at<double>(2);

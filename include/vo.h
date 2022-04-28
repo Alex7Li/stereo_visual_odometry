@@ -248,18 +248,16 @@ private:
   std::vector<cv::Mat> lastRightPyramid;
 
   /**
-   * @brief In case of failure, just return the last value rotation
-   * and translation
+   * @brief Result from the last iteration, to be used as
+   * a prior belief for this one. last_transform
+   * is computed as the inverse of 
+   * (the translation followed by the rotation).
   */
-  cv::Mat last_rotation = cv::Mat::eye(3, 3, CV_64F);
-  cv::Mat last_translation = cv::Mat::zeros(3, 1, CV_64F);
+  cv::Mat_<double> rotation = cv::Mat_<double>::eye(3, 3);
+  cv::Mat_<double> translation = cv::Mat_<double>::zeros(3, 1);
+  cv::Mat_<double> last_transform = cv::Mat_<double>::eye(4, 4);
 
 public:
-  /**
-   * @brief The current estimated pose of the robot.
-   * Just public for testing
-   */
-  cv::Mat frame_pose = cv::Mat::eye(4, 4, CV_64F);
   /**
    * @brief Construct a new Visual Odometry object
    *
@@ -278,14 +276,22 @@ public:
    * @param image_left The left image from stereo camera
    *
    * @param image_right The right image from stereo camera
-   * @return (success, translation, rotation):
+   * @return (success, transform):
    * success: A flag, false if we could not produce a useful result (because not
    * enough features were detected or something went wrong
    * and the prediction is very extreme).
-   * translation, rotation: The 3x1 translation and 3x3 rotation matrix of the robot,
-   * relative to the previous frame.
+   * transform: Transform to move the robot from it's position in the last time step
+   * onto the current time step. If the robot's pose is initially the 4x4 matrix
+   * of rotation and translation vector
+   * frame_pose =
+   * R R R Tx
+   * R R R Ty
+   * R R R Tz
+   * 0 0 0 1
+   * Then the pose after a time step will be frame_pose @ transform
+   * where @ denotes matrix multiplication.
    */
-  std::tuple<bool, cv::Mat, cv::Mat> stereo_callback(const cv::Mat &image_left, const cv::Mat &image_right);
+  std::pair<bool, cv::Mat_<double>> stereo_callback(const cv::Mat &image_left, const cv::Mat &image_right);
 
   /**
    * @brief Given four images and the set of features used in the last

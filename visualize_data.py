@@ -17,7 +17,8 @@ with open(foldername + '/result.csv') as f:
         gtxs.append(gtx - x_0)
         gtys.append(gty - y_0)
 # Initial angle of the cameras is to face down at 26 degrees
-theta = -26 / 180 * math.pi
+theta = 0
+# theta = -26/ 180 * math.pi
 Ryz = np.array([
         [1,0,0],
         [0, np.cos(theta), -np.sin(theta)],
