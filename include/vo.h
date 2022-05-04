@@ -121,7 +121,7 @@ const int FAST_THRESHOLD = 20;
  * points must have onto the image to be considered an inlier when
  * using RANSAC.
  */
-const float RANSAC_REPROJECTION_ERROR = 6;
+const float RANSAC_REPROJECTION_ERROR = 8;
 
 /**
  * @brief Maximum number of iterations for RANSAC.
@@ -132,7 +132,7 @@ const int RANSAC_ITERATIONS = 500;
  * @brief The minimum eigenvalue of the spacial gradient matrix calculated
  * by calcOpitcalFlowPyrLK.
  */
-const double OPTICAL_FLOW_MIN_EIG_THRESHOLD = 0.01;
+const double OPTICAL_FLOW_MIN_EIG_THRESHOLD = 0.001;
 
 /**
  * @brief Threshold for a feature to be considered successfully matched by
