@@ -24,78 +24,84 @@ std::pair<cv::Mat, cv::Mat> readImages(const std::string folderName, int i) {
     int zeros = 4;
     std::string end = ".jpg";
     if (folderName == "run1"){
-    zeros = 6;
-    end = ".png";
+      zeros = 6;
+      end = ".png";
     }
-    lFileName << folderName << "/left/frame" << std::setw(zeros) << std::setfill('0') << i << end;
-    rFileName << folderName << "/right/frame" << std::setw(zeros) << std::setfill('0') << i << end;
-    float left_P[3][3] = {{361.49914, 0., 345.32559},
-                              {0., 361.49914, 174.00476},
-                              {0.0, 0.0, 1.0}};
-    // Left Distortion Paramters
-    float left_D[5] = {
-        0.008135, -0.006633, -0.000483, -0.000344, 0.000000,
-    };
-    // Right Perspective Matrix
-    float right_P[3][3] = {{361.49914, 0., 345.32559},
-                                 {0., 361.49914, 174.00476},
-                                 {0.0, 0.0, 1.0}};
-    // Right Distortion Parameters
-    float right_D[5] = {
-        0.008283, -0.005682, -0.000120, 0.000139, 0.000000,
-    };
-    // Right Intrinsic Matrix
-    float right_K[3][3] = {
-        {313.54715, 0., 325.29634}, {0., 316.71185, 187.56471}, {0., 0., 1.}};
-    // Left Intrinsic Matrix
-    float left_K[3][3] = {
-        {312.60837, 0., 341.50514}, {0., 315.74639, 160.55705}, {0., 0., 1.}};
-    // Right Rectification Matrix
-    float right_R[3][3] = {{0.9998113, -0.00949429, -0.01694758},
-                                 {0.00945161, 0.99995196, -0.00259632},
-                                 {0.01697142, 0.00243565, 0.99985301}};
-    // Left Rectification Matrix
-    float left_R[3][3] = {{0.9997124, -0.0154679, -0.01832675},
-                                {0.01551397, 0.99987683, 0.0023741},
-                                {0.01828777, -0.00265774, 0.99982923}};
-    // Read images & store images in correct format
-    cv::Mat left_rect, right_rect;
+    if(folderName == "cfe_cameras"){
+      lFileName << folderName << "/SeqID_"<< i << "-CamId_0-post-rectification-stereo_app.png";
+      rFileName << folderName << "/SeqID_"<< i << "-CamId_1-post-rectification-stereo_app.png";
+    } else{
+      lFileName << folderName << "/left/frame" << std::setw(zeros) << std::setfill('0') << i << end;
+      rFileName << folderName << "/right/frame" << std::setw(zeros) << std::setfill('0') << i << end;
+    }
     const cv::Mat cur_img_l =  cv::imread(lFileName.str(), cv::IMREAD_GRAYSCALE);
     const cv::Mat cur_img_r =  cv::imread(rFileName.str(), cv::IMREAD_GRAYSCALE);
-    cv::Mat map_left_x, map_left_y, map_right_x, map_right_y;
-    cv::Mat left_camera_matrix(3,3,CV_32F), left_distortion(1,5,CV_32F);
-    cv::Mat left_rotation(3,3,CV_32F), left_projection(3,3,CV_32F);
-    cv::Mat right_camera_matrix(3,3,CV_32F), right_distortion(1,5, CV_32F);
-    cv::Mat right_rotation(3,3,CV_32F), right_projection(3,3,CV_32F);
-    std::memcpy(left_distortion.data, left_D,
-                sizeof(float) * 5);
-    std::memcpy(left_camera_matrix.data, left_K,
-                sizeof(float) * 3 * 3);
-    std::memcpy(left_rotation.data, left_R,
-                sizeof(float) * 3 * 3);
-    std::memcpy(left_projection.data, left_P,
-                sizeof(float) * 3 * 3);
-    std::memcpy(right_distortion.data, right_D,
-                sizeof(float) * 5);
-    std::memcpy(right_camera_matrix.data, right_K,
-                sizeof(float) * 3 * 3);
-    std::memcpy(right_rotation.data, right_R,
-                sizeof(float) * 3 * 3);
-    std::memcpy(right_projection.data, right_P,
-                sizeof(float) * 3 * 3);
-    cv::initUndistortRectifyMap(
-      left_camera_matrix, left_distortion, left_rotation, left_projection,
-      cur_img_l.size(), CV_32FC1, map_left_x, map_left_y);
-    cv::initUndistortRectifyMap(
-        right_camera_matrix, right_distortion, right_rotation, right_projection,
-        cur_img_r.size(), CV_32FC1, map_right_x, map_right_y);
-    cv::remap(cur_img_l, left_rect, map_left_x, map_left_y,
-              cv::INTER_LINEAR);
-    cv::remap(cur_img_r, right_rect, map_right_x, map_right_y,
-              cv::INTER_LINEAR);
-   // It's already rectified!
+    //  It's already rectified!
    return std::make_pair(cur_img_l, cur_img_r);
-   // It's not rectified :(
+    // float left_P[3][3] = {{361.49914, 0., 345.32559},
+    //                           {0., 361.49914, 174.00476},
+    //                           {0.0, 0.0, 1.0}};
+    // // Left Distortion Paramters
+    // float left_D[5] = {
+    //     0.008135, -0.006633, -0.000483, -0.000344, 0.000000,
+    // };
+    // // Right Perspective Matrix
+    // float right_P[3][3] = {{361.49914, 0., 345.32559},
+    //                              {0., 361.49914, 174.00476},
+    //                              {0.0, 0.0, 1.0}};
+    // // Right Distortion Parameters
+    // float right_D[5] = {
+    //     0.008283, -0.005682, -0.000120, 0.000139, 0.000000,
+    // };
+    // // Right Intrinsic Matrix
+    // float right_K[3][3] = {
+    //     {313.54715, 0., 325.29634}, {0., 316.71185, 187.56471}, {0., 0., 1.}};
+    // // Left Intrinsic Matrix
+    // float left_K[3][3] = {
+    //     {312.60837, 0., 341.50514}, {0., 315.74639, 160.55705}, {0., 0., 1.}};
+    // // Right Rectification Matrix
+    // float right_R[3][3] = {{0.9998113, -0.00949429, -0.01694758},
+    //                              {0.00945161, 0.99995196, -0.00259632},
+    //                              {0.01697142, 0.00243565, 0.99985301}};
+    // // Left Rectification Matrix
+    // float left_R[3][3] = {{0.9997124, -0.0154679, -0.01832675},
+    //                             {0.01551397, 0.99987683, 0.0023741},
+    //                             {0.01828777, -0.00265774, 0.99982923}};
+    // // Read images & store images in correct format
+    // cv::Mat left_rect, right_rect;
+    // const cv::Mat cur_img_l =  cv::imread(lFileName.str(), cv::IMREAD_GRAYSCALE);
+    // const cv::Mat cur_img_r =  cv::imread(rFileName.str(), cv::IMREAD_GRAYSCALE);
+    // cv::Mat map_left_x, map_left_y, map_right_x, map_right_y;
+    // cv::Mat left_camera_matrix(3,3,CV_32F), left_distortion(1,5,CV_32F);
+    // cv::Mat left_rotation(3,3,CV_32F), left_projection(3,3,CV_32F);
+    // cv::Mat right_camera_matrix(3,3,CV_32F), right_distortion(1,5, CV_32F);
+    // cv::Mat right_rotation(3,3,CV_32F), right_projection(3,3,CV_32F);
+    // std::memcpy(left_distortion.data, left_D,
+    //             sizeof(float) * 5);
+    // std::memcpy(left_camera_matrix.data, left_K,
+    //             sizeof(float) * 3 * 3);
+    // std::memcpy(left_rotation.data, left_R,
+    //             sizeof(float) * 3 * 3);
+    // std::memcpy(left_projection.data, left_P,
+    //             sizeof(float) * 3 * 3);
+    // std::memcpy(right_distortion.data, right_D,
+    //             sizeof(float) * 5);
+    // std::memcpy(right_camera_matrix.data, right_K,
+    //             sizeof(float) * 3 * 3);
+    // std::memcpy(right_rotation.data, right_R,
+    //             sizeof(float) * 3 * 3);
+    // std::memcpy(right_projection.data, right_P,
+    //             sizeof(float) * 3 * 3);
+    // cv::initUndistortRectifyMap(
+    //   left_camera_matrix, left_distortion, left_rotation, left_projection,
+    //   cur_img_l.size(), CV_32FC1, map_left_x, map_left_y);
+    // cv::initUndistortRectifyMap(
+    //     right_camera_matrix, right_distortion, right_rotation, right_projection,
+    //     cur_img_r.size(), CV_32FC1, map_right_x, map_right_y);
+    // cv::remap(cur_img_l, left_rect, map_left_x, map_left_y,
+    //           cv::INTER_LINEAR);
+    // cv::remap(cur_img_r, right_rect, map_right_x, map_right_y,
+    //           cv::INTER_LINEAR);
   //  return std::make_pair(left_rect, right_rect);
 }
 
@@ -130,7 +136,7 @@ void test_bucket_nonempty() {
   assert(b.features.strengths[2] == 50);
 }
 
-cv::Mat_<unsigned char> makeEmptyImageWithSquare(int n_rows, int n_cols) {
+cv::Mat_<unsigned char> makeEmptyImage(int n_rows, int n_cols) {
     cv::Mat_<unsigned char> image(n_rows, n_cols, CV_8UC1);
     for(int i = 0; i < n_rows; i++){
       for(int j = 0; j < n_cols; j++){
@@ -156,7 +162,7 @@ void test_featureset() {
   FeatureSet fs;
   assert(fs.size() == 0);
 
-  const cv::Mat sample_image = makeEmptyImageWithSquare(300, 200);
+  const cv::Mat sample_image = makeEmptyImage(300, 200);
   for(int i = 0; i <= 10; i++){
     addTriangle(sample_image, 20, (i + 1) * 20, 8);
   }
@@ -180,7 +186,7 @@ void test_featureset() {
 }
 void test_featureset_filter() {
   FeatureSet fs;
-  const cv::Mat sample_image = makeEmptyImageWithSquare(300, 300);
+  const cv::Mat sample_image = makeEmptyImage(300, 300);
   const int image_rows = sample_image.rows;
   const int image_cols = sample_image.cols;
   const int bucket_height = (image_rows +  1) / 2;
@@ -225,29 +231,21 @@ void test_findUnmovedPoints(){
 }
 
 void test_circularMatching() {
-    float left_P[3][4] = {{361.49914, 0., 345.32559, 0.0},
-                              {0., 361.49914, 174.00476, 0.0},
-                              {0.0, 0.0, 1.0, 0.0}};
-    float right_P[3][4] = {{361.49914, 0., 345.32559, -22.5428},
-                              {0., 361.49914, 174.00476, 0.0},
-                              {0.0, 0.0, 1.0, 0.0}};
-  const cv::Mat iL0 = makeEmptyImageWithSquare(300, 300);
-  const cv::Mat iR0 = makeEmptyImageWithSquare(300, 300);
-  const cv::Mat iL1 = makeEmptyImageWithSquare(300, 300);
-  const cv::Mat iR1 = makeEmptyImageWithSquare(300, 300);
+  const cv::Mat iL0 = makeEmptyImage(300, 300);
+  const cv::Mat iR0 = makeEmptyImage(300, 300);
+  const cv::Mat iL1 = makeEmptyImage(300, 300);
+  const cv::Mat iR1 = makeEmptyImage(300, 300);
   for(int i = 0; i <= 10; i++){
     for(int j = 0; j <= 10; j++){
       addTriangle(iL0, (j + 1) * 20, (i + 1) * 20, 8);
-      addTriangle(iL1, (j + 1) * 20 + 5, (i + 1) * 20, 8);
-      addTriangle(iR0, (j + 1) * 20, (i + 1) * 20 + 5, 8);
-      addTriangle(iR1, (j + 1) * 20 + 5, (i + 1) * 20 + 5, 8);
+      addTriangle(iL1, (j + 1) * 20 + 1, (i + 1) * 20, 8);
+      addTriangle(iR0, (j + 1) * 20, (i + 1) * 20 + 1, 8);
+      addTriangle(iR1, (j + 1) * 20 + 1, (i + 1) * 20 + 1, 8);
     }
   }
   cv::imshow("image ", iL0);
   cv::waitKey(0.01);
-  cv::Mat projMatrl(3, 4, CV_32F, left_P);
-  cv::Mat projMatrr(3, 4, CV_32F, right_P);
-  VisualOdometry vo(projMatrl, projMatrr);
+  VisualOdometry vo;
   std::vector<cv::Point2f> pl0, pr0, pl1, pr1, pret;
   vo.stereo_callback(iL0,iR0);
   FeatureSet fs;
@@ -260,6 +258,8 @@ void test_circularMatching() {
   // run
   pl0 = fs.points;
   vo.circularMatching(iL1, iR1, pl0, pr0, pl1, pr1, fs);
+  n_points = fs.points.size();
+  dbg(n_points);
   assert(pl0.size() == n_points);
   assert(pl1.size() == n_points);
   assert(pr0.size() == n_points);
@@ -358,9 +358,9 @@ int main(int argc, char** argv) {
         run_tests();
       }
     }
-    std::string folderName = "run1";
+    std::string folderName = "cfe_cameras";
     bool has_ground_truth = true;
-    if(folderName == "rand_feats"){
+    if(folderName == "rand_feats" || folderName == "cfe_cameras"){
       has_ground_truth = false;
     }
     // std::string folderName = "run1";
@@ -394,12 +394,19 @@ int main(int argc, char** argv) {
                            {0.0, 0.0, 1.0, 0.0}};
     cv::Mat projMatrl(3, 4, CV_32F, left_P);
     cv::Mat projMatrr(3, 4, CV_32F, right_P);
-    VisualOdometry vo(projMatrl, projMatrr);
+    VisualOdometry vo;
+    vo.initalize_projection_matricies(projMatrl, projMatrr);
     /**
      * @brief The current estimated pose of the robot.
      */
     cv::Mat frame_pose = cv::Mat::eye(4, 4, CV_64F);
     for(int i = 0; i < N_FRAMES; i++) {
+      std::pair<cv::Mat, cv::Mat> images = readImages(folderName, i);
+      if(images.first.size().height == 0){
+        continue;
+      }
+      assert(images.second.size().height != 0);
+
       std::cout << "Frame " << i << ": ";
       double gtx = 0;
       double gty = 0;
@@ -413,7 +420,6 @@ int main(int argc, char** argv) {
         gtx = std::stod(xstr);
         gty = std::stod(ystr);
       }
-      std::pair<cv::Mat, cv::Mat> images = readImages(folderName, i);
       std::pair<bool, cv::Mat> out =  vo.stereo_callback(images.first, images.second);
       // bool success = out.first;
       cv::Mat transform = out.second;

@@ -2,6 +2,23 @@
 Stereo Visual Odometry in ROS  
 roslaunch stereo_visual_odometry powerranger.launch 
 
+
+# Usage
+
+1) Get the folder you want to use, cfe_cameras is the most realistic, you can unzip it.
+2) Change the name of the folder you want to use in the folderName parameter of src/main.cpp.
+3) From the top level directory:
+```bash
+make
+vo 400
+```
+Where 400 is the number of frames you want to run for
+
+Then when you finish, you can visualize the predicted path with
+```bash
+python visualize_data.py
+```
+
 # Structure
 
 # Entry point: `stereo_vo.cpp`
