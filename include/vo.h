@@ -24,51 +24,20 @@
 #include <iterator>
 #include <opencv2/calib3d/calib3d.hpp>
 #include <opencv2/features2d/features2d.hpp>
-#include <opencv2/xfeatures2d.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/opencv.hpp>
 #include <opencv2/video/tracking.hpp>
 #include <sstream>
-#include <memory>
 #include <string>
 #include <vector>
-#define dbg(x) std::cerr << " >>> " << #x << " = " << x << std::endl;
-#define dbga(a) std::cerr << " >>> " << #a << " = "; for(unsigned int xtw = 0; xtw < a.size(); xtw++) std::cerr << a[xtw] << " "; std::cerr << std::endl;
-#define dbgstr(a) std::cerr << " >>> " << a << std::endl;
-/************
- * ROS ONLY *
- ************/
-// #include "ros/ros.h"
-// #include "sensor_msgs/Image.h"
-// #include "std_msgs/Int32MultiArray.h"
-// #include "nav_msgs/Odometry.h"
-// #include "geometry_msgs/Quaternion.h"
-// #include <tf/transform_broadcaster.h>
-// #include <message_filters/subscriber.h>
-// #include <message_filters/synchronizer.h>
-// #include <message_filters/sync_policies/approximate_time.h>
-// #include <cv_bridge/cv_bridge.h>
-
-// #include <eigen3/Eigen/Dense>
-// #include <eigen3/Eigen/Core>
-// #include <eigen3/Eigen/Geometry> 
-/* END ROS ONLY */
-
-/************
- * CFS ONLY *
- ************/
-/*
-#include "Core"
-#include "Dense"
-
-extern "C" {
-#include "cfe_error.h"
-#include "common_types.h"
-#include "pe_events.h"
-}
-*/
-/* END CFS ONLY */
+#define CFE_ES_WriteToSysLog printf
+// extern "C" {
+// #include "cfe_error.h"
+// #include "common_types.h"
+// #include "pe_events.h"
+// #include "cfe.h"
+// }
 
 namespace visual_odometry {
 
@@ -95,7 +64,7 @@ const int FEATURES_PER_BUCKET = 1;
  * @brief Minimum number of features required after
  * circular matching before vo fails.
  */
-const int FEATURES_THRESHOLD = 20;
+const int FEATURES_THRESHOLD = 10;
 
 /**
  * @brief Minimum number of features before
@@ -126,13 +95,13 @@ const float RANSAC_REPROJECTION_ERROR = 8;
 /**
  * @brief Maximum number of iterations for RANSAC.
  */
-const int RANSAC_ITERATIONS = 500;
+const int RANSAC_ITERATIONS = 100;
 
 /**
  * @brief The minimum eigenvalue of the spacial gradient matrix calculated
  * by calcOpitcalFlowPyrLK.
  */
-const double OPTICAL_FLOW_MIN_EIG_THRESHOLD = 0.001;
+const double OPTICAL_FLOW_MIN_EIG_THRESHOLD = 0.002;
 
 /**
  * @brief Threshold for a feature to be considered successfully matched by
@@ -140,6 +109,18 @@ const double OPTICAL_FLOW_MIN_EIG_THRESHOLD = 0.001;
  * least this close to the original point in pixels.
  */
 const double CIRCULAR_MATCHING_SUCCESS_THRESHOLD = .15;
+
+/**
+ * @brief Threshold for the maximum valid translation norm we expect to get.
+ * If a greater translation is detected, vo will fail.
+ **/
+const double MAX_TRANSLATION_NORM = .2;
+
+/**
+ * @brief Threshold for the maximum valid rotation (in radians) we expect to
+ * get. If a greater rotation is detected, vo will fail.
+ */
+const double MAX_ROTATION_NORM = .5;
 
 /**
  * @brief A set of locations for image features and their ages.
@@ -287,15 +268,8 @@ class VisualOdometry {
    public:
     /**
      * @brief Construct a new Visual Odometry object
-     *
-     * @param ProjMatrl Left camera projection matrix
-     *
-     * @param projMatrr Right camera projection matrix
      */
     VisualOdometry();
-
-
-    ~VisualOdometry();
 
     /**
      * @brief Initialize a Visual Odometry object
@@ -306,7 +280,8 @@ class VisualOdometry {
      *
      * @param rightCameraProjection Right camera projection matrix
      */
-    void initalize_projection_matricies(const cv::Mat leftCameraProjection, const cv::Mat rightCameraProjection);
+    void initalize_projection_matricies(const cv::Mat leftCameraProjection,
+                                        const cv::Mat rightCameraProjection);
 
     /**
      * @brief Process one time step of camera imagery and

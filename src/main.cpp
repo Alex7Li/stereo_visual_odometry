@@ -28,14 +28,20 @@ std::pair<cv::Mat, cv::Mat> readImages(const std::string folderName, int i) {
       end = ".png";
     }
     if(folderName == "cfe_cameras"){
-      lFileName << folderName << "/SeqID_"<< i << "-CamId_0-post-rectification-stereo_app.png";
-      rFileName << folderName << "/SeqID_"<< i << "-CamId_1-post-rectification-stereo_app.png";
+      lFileName << folderName << "/SeqID_"<< i << "-CamId_0-vo-rectified-stereo_app.png";
+      rFileName << folderName << "/SeqID_"<< i << "-CamId_1-vo-rectified-stereo_app.png";
     } else{
       lFileName << folderName << "/left/frame" << std::setw(zeros) << std::setfill('0') << i << end;
       rFileName << folderName << "/right/frame" << std::setw(zeros) << std::setfill('0') << i << end;
     }
-    const cv::Mat cur_img_l =  cv::imread(lFileName.str(), cv::IMREAD_GRAYSCALE);
-    const cv::Mat cur_img_r =  cv::imread(rFileName.str(), cv::IMREAD_GRAYSCALE);
+    cv::Mat image_l_bw, image_r_bw;
+    const cv::Mat cur_img_l =  cv::imread(lFileName.str());//, cv::IMREAD_GRAYSCALE);
+    const cv::Mat cur_img_r =  cv::imread(rFileName.str());//, cv::IMREAD_GRAYSCALE);
+    if (!cur_img_l.empty()){
+      cv::cvtColor(cur_img_l, image_l_bw, cv::COLOR_BGR2GRAY); 
+      cv::cvtColor(cur_img_r, image_r_bw, cv::COLOR_BGR2GRAY); 
+    }
+    
     //  It's already rectified!
    return std::make_pair(cur_img_l, cur_img_r);
 }
@@ -105,7 +111,7 @@ void test_featureset() {
   // displayPoints(sample_image, fs.points);
   // cv::imshow("vis ", sample_image);  
   // cv::waitKey(0.01);
-  dbg(fs.size());
+  // dbg(fs.size());
   for(int age: fs.ages) {
     assert(age == 0);
   }
@@ -113,8 +119,8 @@ void test_featureset() {
     // assert(strength >= FAST_THRESHOLD);
     assert(strength <= 128);
   }
-  dbga(fs.strengths);
-  dbga(fs.points);
+  // dbga(fs.strengths);
+  // dbga(fs.points);
   assert(fs.size() == 11);
   fs.filterByBucketLocationInternal(sample_image, 1, 1, 0, 7); /* Put it all in one bucket */
   assert(fs.size() == 7);
@@ -166,16 +172,16 @@ void test_findUnmovedPoints(){
 }
 
 void test_circularMatching() {
-  const cv::Mat iL0 = makeEmptyImage(300, 300);
-  const cv::Mat iR0 = makeEmptyImage(300, 300);
-  const cv::Mat iL1 = makeEmptyImage(300, 300);
-  const cv::Mat iR1 = makeEmptyImage(300, 300);
+  const cv::Mat iL0 = makeEmptyImage(600, 600);
+  const cv::Mat iR0 = makeEmptyImage(600, 600);
+  const cv::Mat iL1 = makeEmptyImage(600, 600);
+  const cv::Mat iR1 = makeEmptyImage(600, 600);
   for(int i = 0; i <= 10; i++){
     for(int j = 0; j <= 10; j++){
-      addTriangle(iL0, (j + 1) * 20, (i + 1) * 20, 8);
-      addTriangle(iL1, (j + 1) * 20 + 1, (i + 1) * 20, 8);
-      addTriangle(iR0, (j + 1) * 20, (i + 1) * 20 + 1, 8);
-      addTriangle(iR1, (j + 1) * 20 + 1, (i + 1) * 20 + 1, 8);
+      addTriangle(iL0, (j + 1) * 40, (i + 1) * 40, 8);
+      addTriangle(iL1, (j + 1) * 40 + 1, (i + 1) * 40, 8);
+      addTriangle(iR0, (j + 1) * 40, (i + 1) * 40 + 1, 8);
+      addTriangle(iR1, (j + 1) * 40 + 1, (i + 1) * 40 + 1, 8);
     }
   }
   cv::imshow("image ", iL0);
@@ -194,7 +200,7 @@ void test_circularMatching() {
   pl0 = fs.points;
   vo.circularMatching(iL1, iR1, pl0, pr0, pl1, pr1, fs);
   n_points = fs.points.size();
-  dbg(n_points);
+  // dbg(n_points);
   assert(pl0.size() == n_points);
   assert(pl1.size() == n_points);
   assert(pr0.size() == n_points);
@@ -257,8 +263,31 @@ void test_cameraToWorld() {
   assert(n_inliers == n_points);
 }
 
-void test_goes_forward() {
-
+void test_movement() {
+  std::string left_t0 = "cfe_cameras/SeqID_166-CamId_0-vo-rectified-stereo_app.png";
+  std::string right_t0 = "cfe_cameras/SeqID_166-CamId_1-vo-rectified-stereo_app.png";
+  std::string left_t1 = "cfe_cameras/SeqID_173-CamId_0-vo-rectified-stereo_app.png";
+  std::string right_t1 = "cfe_cameras/SeqID_173-CamId_1-vo-rectified-stereo_app.png";
+  auto t0_imgs = readImages("cfe_cameras", 297);
+  auto t1_imgs = readImages("cfe_cameras", 301);
+  float left_P[3][4] = {{322.11376, 0.0, 327.47336, 0.0},
+                        {0.0, 322.11376, 176.33722, 0.0},
+                        {0.0, 0.0, 1.0, 0.0}};
+  float right_P[3][4] = {{322.11376, 0.0, 327.47336, -22.5428},
+                          {0.0, 322.11376, 176.33722, 0.0},
+                          {0.0, 0.0, 1.0, 0.0}};
+  cv::Mat projMatrl(3, 4, CV_32F, left_P);
+  cv::Mat projMatrr(3, 4, CV_32F, right_P);
+  VisualOdometry vo;
+  vo.initalize_projection_matricies(projMatrl, projMatrr);
+  auto result_0 = vo.stereo_callback(t0_imgs.first, t0_imgs.second);
+  assert(result_0.first == false);
+  auto result_1 = vo.stereo_callback(t1_imgs.first, t1_imgs.second);
+  assert(result_1.first == true);
+  cv::Mat_<double> transform = result_1.second;
+  double translation_norm = sqrt(pow(result_1.second(0, 3), 2)  + pow(result_1.second(1, 3), 2) + pow(result_1.second(2, 3), 2));
+  // dbg(translation_norm);
+  assert(abs(translation_norm - .05) < .1);
 }
 
 void run_tests() {
@@ -276,6 +305,7 @@ void run_tests() {
   test_circularMatching();
   std::cout << "TEST DELETE FEATURES" << std::endl;
   test_cameraToWorld();
+  test_movement();
   std::cout << "ALL TESTS PASS" << std::endl;
   // assert(false);
   // std::cout << "NEVERMIND ASSERTS WERE JUST DISABLED" << std::endl;
