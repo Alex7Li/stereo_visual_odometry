@@ -1,18 +1,3 @@
-/****************************************************************
- *
- * @file 		vo.cpp
- *
- * @brief 		The Visual Odometry class being used for
- translation. The math can be found in Haidar Jamal's Thesis:
- *https://www.ri.cmu.edu/publications/localization-for-lunar-micro-rovers/
- *
- * @version 	1.0
- * @date 		04/11/2022
- *
- * @authors 	Ben Kolligs, Alex Li
- * @author 		Carnegie Mellon University, Planetary Robotics Lab
- *
- ****************************************************************/
 #include "vo.h"
 
 using namespace visual_odometry;
@@ -21,26 +6,40 @@ VisualOdometry::VisualOdometry() {
 }
 
 void VisualOdometry::initalize_projection_matricies(
-    const cv::Mat leftCameraProjection, const cv::Mat rightCameraProjection) {
-    leftCameraProjection_  = leftCameraProjection;
-    rightCameraProjection_ = rightCameraProjection;
+    const cv::Mat_<float32> leftCameraProjection, const cv::Mat_<float32> rightCameraProjection) {
+    // CORRECT
+    // Copy the matrix in case the caller matricies are allocated on the stack,
+    // since they may go out of scope
+    leftCameraProjection.copyTo(leftCameraProjection_);
+    rightCameraProjection.copyTo(rightCameraProjection_);
+
     left_camera_matrix =
-        (cv::Mat_<float>(3, 3) << leftCameraProjection_.at<float>(0, 0),
-         leftCameraProjection_.at<float>(0, 1),
-         leftCameraProjection_.at<float>(0, 2),
-         leftCameraProjection_.at<float>(1, 0),
-         leftCameraProjection_.at<float>(1, 1),
-         leftCameraProjection_.at<float>(1, 2),
-         leftCameraProjection_.at<float>(2, 0),
-         leftCameraProjection_.at<float>(2, 1),
-         leftCameraProjection_.at<float>(2, 2));
+        (cv::Mat_<float32>(3, 3) << leftCameraProjection_.at<float32>(0, 0),
+         leftCameraProjection_.at<float32>(0, 1),
+         leftCameraProjection_.at<float32>(0, 2),
+         leftCameraProjection_.at<float32>(1, 0),
+         leftCameraProjection_.at<float32>(1, 1),
+         leftCameraProjection_.at<float32>(1, 2),
+         leftCameraProjection_.at<float32>(2, 0),
+         leftCameraProjection_.at<float32>(2, 1),
+         leftCameraProjection_.at<float32>(2, 2));
 }
 
-std::pair<bool, cv::Mat_<double>> VisualOdometry::stereo_callback(
+void VisualOdometry::displayPoints(cv::Mat& image, const std::vector<cv::Point2f>&  points)
+{
+    int radius = 2;
+    // Copy image since if we modify the image it will affect the feature detection
+    // part of our algorith!
+    // cv::Mat out(image.size().height, image.size().width, CV_8UC1);
+    // image.copyTo(out);
+    for (size_t i = 0; i < points.size(); i++)
+    {
+        cv::circle(image, cv::Point(points[i].x, points[i].y), radius, 255);
+    }
+}
+
+std::pair<bool, cv::Mat_<float64>> VisualOdometry::stereo_callback(
     const cv::Mat &imageLeft, const cv::Mat &imageRight) {
-    CFE_ES_WriteToSysLog("imageLeft size: %d, %d\n", imageLeft.size().height, imageLeft.size().width);
-    CFE_ES_WriteToSysLog("imageRight size: %d, %d\n", imageRight.size().height, imageRight.size().width);
-    CFE_ES_WriteToSysLog("image depths: %d, %d\n", imageLeft.depth(), imageRight.depth());
     std::pair<bool, cv::Mat> fail_result =
         std::make_pair(false, last_transform);
     // Wait until we have at least two time steps of data
@@ -72,8 +71,12 @@ std::pair<bool, cv::Mat_<double>> VisualOdometry::stereo_callback(
         currentVOFeatures.ages[i] += 1;
     }
 
-    imageLeftT0_  = imageLeftT1_;
-    imageRightT0_ = imageRightT1_;
+    imageLeftT1_.copyTo(imageLeftT0_);
+    imageRightT1_.copyTo(imageRightT0_);
+#if defined(POSE_DEBUG_LOG_FILE)
+    displayPoints(imageRightT1_, pointsRightT0);
+    displayPoints(imageLeftT1_, pointsLeftT0);
+#endif   // POSE_DEBUG_LOG_FILE
 
     // Need at least 4 points for cameraToWorld to not crash.
     if (pointsLeftT0.size() <= std::max(4, FEATURES_THRESHOLD)) {
@@ -82,20 +85,24 @@ std::pair<bool, cv::Mat_<double>> VisualOdometry::stereo_callback(
     // ---------------------
     // Triangulate 3D Points
     // ---------------------
+    CFE_ES_WriteToSysLog("Pose Estimator: Start triangulation\n");
     cv::Mat world_points_T0, world_homogenous_points_T0;
     cv::triangulatePoints(leftCameraProjection_, rightCameraProjection_,
                           pointsLeftT0, pointsRightT0,
                           world_homogenous_points_T0);
     cv::convertPointsFromHomogeneous(world_homogenous_points_T0.t(),
                                      world_points_T0);
+
     // ---------------------
     // Tracking transfomation
     // ---------------------
 
+    CFE_ES_WriteToSysLog("Pose Estimator: Start cameratoworld\n");
     auto result   = cameraToWorld(left_camera_matrix, pointsLeftT1,
                                   world_points_T0, rotation, translation);
     int n_inliers = result.first.size().height;
     bool success  = result.second;
+
     if (n_inliers < FEATURES_THRESHOLD || !success) {
         if(success){
           CFE_ES_WriteToSysLog("Pose Estimator: Failed, n_inliers %d\n", n_inliers);
@@ -114,10 +121,11 @@ std::pair<bool, cv::Mat_<double>> VisualOdometry::stereo_callback(
     deleteFeaturesWithFailureStatus(currentVOFeatures, is_ok);
 
     cv::Mat rotation_rodrigues;
-    double translation_norm = cv::norm(translation);
+    float64 translation_norm = cv::norm(translation);
     cv::Rodrigues(rotation, rotation_rodrigues);
-    double angle = cv::norm(rotation_rodrigues, cv::NORM_L2);
+    float64 angle = cv::norm(rotation_rodrigues, cv::NORM_L2);
 
+    CFE_ES_WriteToSysLog("Pose Estimator: Translation norm of %f\n", translation_norm);
     if (translation_norm > MAX_TRANSLATION_NORM || angle > MAX_ROTATION_NORM) {
         CFE_ES_WriteToSysLog("Pose Estimator: Too big translation norm of %f or rotation norm of %f\n", translation_norm, angle);
         return fail_result;
@@ -125,7 +133,6 @@ std::pair<bool, cv::Mat_<double>> VisualOdometry::stereo_callback(
     cv::Mat transform =
         visual_odometry::getInverseTransform(rotation, translation);
     last_transform = transform;
-    // TODO: Use this result for pose estimation, currently not integrated.
     return std::make_pair(true, transform);
 }
 
@@ -172,7 +179,7 @@ void VisualOdometry::circularMatching(const cv::Mat &imgLeftT1,
     if (pointsLeftT0.size() == 0) {
         return;
     }
-    std::vector<float> err;
+    std::vector<float32> err;
     cv::TermCriteria termcrit = cv::TermCriteria(
         cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 30, 0.0001);
 
@@ -182,7 +189,7 @@ void VisualOdometry::circularMatching(const cv::Mat &imgLeftT1,
     std::vector<uchar> status3;
     std::vector<cv::Mat> pyramidl1;
     std::vector<cv::Mat> pyramidr1;
-    double minEigThreshold = OPTICAL_FLOW_MIN_EIG_THRESHOLD;
+    float64 minEigThreshold = OPTICAL_FLOW_MIN_EIG_THRESHOLD;
     // Perform the circular matching in the order
     // leftT0 -> leftT1 -> rightT1 -> rightT0 -> leftT0.
     // There is a reason to go in this order rather than
@@ -240,7 +247,7 @@ cv::Mat visual_odometry::getInverseTransform(
     const cv::Mat &rotation, const cv::Mat &translation_stereo) {
     cv::Mat rigid_body_transformation;
     // Construct a homogeneous transform from the rotation and translation
-    cv::Mat final_homogeneous_row = (cv::Mat_<double>(1, 4) << 0, 0, 0, 1);
+    cv::Mat final_homogeneous_row = (cv::Mat_<float64>(1, 4) << 0, 0, 0, 1);
 
     cv::hconcat(rotation, translation_stereo, rigid_body_transformation);
     cv::vconcat(rigid_body_transformation, final_homogeneous_row,
@@ -252,14 +259,14 @@ cv::Mat visual_odometry::getInverseTransform(
 
 // --------------------------------
 // Original source for the code in this section
-// https://github.com/hjamal3/stereo_visual_odometry/blob/main/src/visualOdometry.cpp
+// https://github.com/hjamal3/stereo_visual_odometry/bl_<float32>ob/main/src/visualOdometry.cpp
 // --------------------------------
 
 std::vector<bool> visual_odometry::findClosePoints(
     const std::vector<cv::Point2f> &points_1,
-    const std::vector<cv::Point2f> &points_2, float threshold) {
+    const std::vector<cv::Point2f> &points_2, float32 threshold) {
     std::vector<bool> is_ok;
-    float offset;
+    float32 offset;
     for (unsigned int i = 0; i < points_1.size(); i++) {
         offset = std::max(std::abs(points_1[i].x - points_2[i].x),
                           std::abs(points_1[i].y - points_2[i].y));
@@ -273,25 +280,25 @@ std::vector<bool> visual_odometry::findClosePoints(
 }
 
 std::pair<cv::Mat, bool> visual_odometry::cameraToWorld(
-    const cv::Mat &left_camera_matrix,
-    const std::vector<cv::Point2f> &cameraPoints, const cv::Mat &worldPoints,
+    const cv::Mat_<float32> &left_camera_matrix,
+    const std::vector<cv::Point2f> &cameraPoints, const cv::Mat_<float32> &worldPoints,
     cv::Mat &rotation, cv::Mat &translation) {
     // Calculate frame to frame transformation.
-    cv::Mat distCoeffs = cv::Mat::zeros(4, 1, CV_64FC1);
+    cv::Mat distCoeffs = cv::Mat::zeros(4, 1, CV_32F);
     cv::Mat rvec;
     cv::Rodrigues(rotation, rvec);
     // Number of Ransac iterations.
     int iterationsCount = RANSAC_ITERATIONS;
     // maximum allowed distance to consider it an inlier.
-    float reprojectionError = RANSAC_REPROJECTION_ERROR;
+    float32 reprojectionError = RANSAC_REPROJECTION_ERROR;
     // RANSAC successful confidence.
-    float confidence       = 0.98;
+    float32 confidence       = 0.98;
     bool useExtrinsicGuess = true;
     int flags              = cv::SOLVEPNP_ITERATIVE;
 
     cv::Mat inliers;
     cv::Mat old_translation = translation.clone();
-    bool success            = cv::solvePnPRansac(
+    bool success = cv::solvePnPRansac(
                    worldPoints, cameraPoints, left_camera_matrix, distCoeffs, rvec,
                    translation, useExtrinsicGuess, iterationsCount, reprojectionError,
                    confidence, inliers, flags);

@@ -324,6 +324,9 @@ int main(int argc, char** argv) {
       }
     }
     std::string folderName = "cfe_cameras";
+    if(argc >= 3) {
+      folderName = std::string(argv[2]);
+    }
     bool has_ground_truth = true;
     if(folderName == "rand_feats" || folderName == "cfe_cameras"){
       has_ground_truth = false;
@@ -361,10 +364,13 @@ int main(int argc, char** argv) {
     cv::Mat projMatrr(3, 4, CV_32F, right_P);
     VisualOdometry vo;
     vo.initalize_projection_matricies(projMatrl, projMatrr);
-    /**
-     * @brief The current estimated pose of the robot.
-     */
-    cv::Mat frame_pose = cv::Mat::eye(4, 4, CV_64F);
+    // Initial angle of the cameras is to face down at 26 degrees
+    float theta = (26.0 / 360) * 2 * M_PI;
+    double frame_pose_mat[4][4] = {{1.0, 0.0, 0.0, 0.0},
+                           {0.0, cos(theta), sin(theta), 0.0},
+                           {0.0, -sin(theta), cos(theta), 0.0},
+                           {0.0, 0.0, 0.0, 1.0}}; 
+    cv::Mat frame_pose(4, 4, CV_64F, frame_pose_mat);
     for(int i = 0; i < N_FRAMES; i++) {
       std::pair<cv::Mat, cv::Mat> images = readImages(folderName, i);
       if(images.first.size().height == 0){
@@ -385,8 +391,7 @@ int main(int argc, char** argv) {
         gtx = std::stod(xstr);
         gty = std::stod(ystr);
       }
-      std::pair<bool, cv::Mat> out =  vo.stereo_callback(images.first, images.second);
-      // bool success = out.first;
+      std::pair<bool, cv::Mat_<double>> out =  vo.stereo_callback(images.first, images.second);
       cv::Mat transform = out.second;
       frame_pose = frame_pose * transform;
       double x = frame_pose.col(3).at<double>(0);
@@ -400,3 +405,4 @@ int main(int argc, char** argv) {
     //cv::imwrite("./disparity.png",  (cv::Mat) disp_image);
     return 0;
 }
+

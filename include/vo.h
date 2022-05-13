@@ -1,3 +1,4 @@
+
 /****************************************************************
  *
  * @file 		vo.h
@@ -13,6 +14,10 @@
  * @author 		Carnegie Mellon University, Planetary Robotics Lab
  *
  ****************************************************************/
+#define CFE_ES_WriteToSysLog printf
+#define float32 float
+#define float64 double
+
 #include <ctype.h>
 #include <math.h>
 
@@ -31,7 +36,6 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#define CFE_ES_WriteToSysLog printf
 // extern "C" {
 // #include "cfe_error.h"
 // #include "common_types.h"
@@ -64,7 +68,7 @@ const int FEATURES_PER_BUCKET = 1;
  * @brief Minimum number of features required after
  * circular matching before vo fails.
  */
-const int FEATURES_THRESHOLD = 10;
+const int FEATURES_THRESHOLD = 15;
 
 /**
  * @brief Minimum number of features before
@@ -90,7 +94,7 @@ const int FAST_THRESHOLD = 20;
  * points must have onto the image to be considered an inlier when
  * using RANSAC.
  */
-const float RANSAC_REPROJECTION_ERROR = 8;
+const float32 RANSAC_REPROJECTION_ERROR = 8;
 
 /**
  * @brief Maximum number of iterations for RANSAC.
@@ -101,26 +105,26 @@ const int RANSAC_ITERATIONS = 100;
  * @brief The minimum eigenvalue of the spacial gradient matrix calculated
  * by calcOpitcalFlowPyrLK.
  */
-const double OPTICAL_FLOW_MIN_EIG_THRESHOLD = 0.002;
+const float64 OPTICAL_FLOW_MIN_EIG_THRESHOLD = 0.001;
 
 /**
  * @brief Threshold for a feature to be considered successfully matched by
  * circular matching. The circularly matched feature is required to be at
  * least this close to the original point in pixels.
  */
-const double CIRCULAR_MATCHING_SUCCESS_THRESHOLD = .15;
+const float64 CIRCULAR_MATCHING_SUCCESS_THRESHOLD = .15;
 
 /**
  * @brief Threshold for the maximum valid translation norm we expect to get.
  * If a greater translation is detected, vo will fail.
  **/
-const double MAX_TRANSLATION_NORM = .2;
+const float64 MAX_TRANSLATION_NORM = .1;
 
 /**
  * @brief Threshold for the maximum valid rotation (in radians) we expect to
  * get. If a greater rotation is detected, vo will fail.
  */
-const double MAX_ROTATION_NORM = .5;
+const float64 MAX_ROTATION_NORM = .5;
 
 /**
  * @brief A set of locations for image features and their ages.
@@ -228,10 +232,8 @@ class VisualOdometry {
    private:
     /** Number of frames seen so far. */
     int frame_id = 0;
-    /** Projection matrices for the left and right cameras. */
-    cv::Mat leftCameraProjection_, rightCameraProjection_;
     /** The leftmost 3x3 submatrix of leftCameraProjection_ */
-    cv::Mat left_camera_matrix;
+    cv::Mat_<float32> left_camera_matrix;
 
     /** Images at current and next time step. */
     cv::Mat imageRightT0_, imageLeftT0_;
@@ -246,7 +248,7 @@ class VisualOdometry {
      * @brief Optical flow calculation hyperparameters:
      * window size and max pyramid level
      */
-    cv::Size winSize = cv::Size(7, 7);
+    cv::Size winSize = cv::Size(10, 10);
     int maxLevel     = 3;
 
     /**
@@ -261,15 +263,37 @@ class VisualOdometry {
      * is computed as the inverse of
      * (the translation followed by the rotation).
      */
-    cv::Mat_<double> rotation       = cv::Mat_<double>::eye(3, 3);
-    cv::Mat_<double> translation    = cv::Mat_<double>::zeros(3, 1);
-    cv::Mat_<double> last_transform = cv::Mat_<double>::eye(4, 4);
+    cv::Mat_<float64> rotation       = cv::Mat_<float64>::eye(3, 3);
+    cv::Mat_<float64> translation    = cv::Mat_<float64>::zeros(3, 1);
+    cv::Mat_<float64> last_transform = cv::Mat_<float64>::eye(4, 4);
+    std::ofstream vo_log;   // for sam's use to debug
 
    public:
+    /** Projection matrices for the left and right cameras. */
+    cv::Mat_<float32> leftCameraProjection_, rightCameraProjection_;
     /**
      * @brief Construct a new Visual Odometry object
      */
     VisualOdometry();
+
+    void setLogFile(std::string logpath) {
+        vo_log.open(logpath);
+        if (vo_log.good()) {
+            CFE_ES_WriteToSysLog(
+                "Pose Estimator: Opened VO Logs in executable directory");
+            auto now = std::time(0);
+            vo_log << "Pose Estimator Test: " << std::ctime(&now) << std::endl;
+
+        } else {
+            CFE_ES_WriteToSysLog("Pose Estimator: Unable to open log files");
+        }
+    }
+
+    void displayPoints(cv::Mat &image, const std::vector<cv::Point2f> &points);
+
+    cv::Mat displayTracking(const cv::Mat &image_1, const cv::Mat &image_2,
+                            const std::vector<cv::Point2f> &pointsLeftT0,
+                            const std::vector<cv::Point2f> &pointsRightT1);
 
     /**
      * @brief Initialize a Visual Odometry object
@@ -280,8 +304,9 @@ class VisualOdometry {
      *
      * @param rightCameraProjection Right camera projection matrix
      */
-    void initalize_projection_matricies(const cv::Mat leftCameraProjection,
-                                        const cv::Mat rightCameraProjection);
+    void initalize_projection_matricies(
+        const cv::Mat_<float32> leftCameraProjection,
+        const cv::Mat_<float32> rightCameraProjection);
 
     /**
      * @brief Process one time step of camera imagery and
@@ -305,7 +330,7 @@ class VisualOdometry {
      * The estimted pose after a time step will be frame_pose @ transform
      * where @ denotes matrix multiplication.
      */
-    std::pair<bool, cv::Mat_<double>> stereo_callback(
+    std::pair<bool, cv::Mat_<float64>> stereo_callback(
         const cv::Mat &image_left, const cv::Mat &image_right);
 
     /**
@@ -367,7 +392,7 @@ class VisualOdometry {
  */
 std::vector<cv::Point2f> featureDetectionFast(
     const cv::Mat image, const int fast_threshold,
-    std::vector<float> &response_strengths);
+    std::vector<float32> &response_strengths);
 
 /**
  * @brief Given a vectors of points,
@@ -404,7 +429,7 @@ void deleteFeaturesWithFailureStatus(FeatureSet &currentFeatures,
  */
 std::vector<bool> findClosePoints(const std::vector<cv::Point2f> &points_1,
                                   const std::vector<cv::Point2f> &points_2,
-                                  float threshold);
+                                  float32 threshold);
 
 /**
  * @brief Compute the translation and rotation that needs to occur
@@ -425,9 +450,10 @@ std::vector<bool> findClosePoints(const std::vector<cv::Point2f> &points_1,
  * success: True if tracking was successful.
  */
 std::pair<cv::Mat, bool> cameraToWorld(
-    const cv::Mat &cameraProjection,
-    const std::vector<cv::Point2f> &cameraPoints, const cv::Mat &worldPoints,
-    cv::Mat &rotation, cv::Mat &translation);
+    const cv::Mat_<float32> &cameraProjection,
+    const std::vector<cv::Point2f> &cameraPoints,
+    const cv::Mat_<float32> &worldPoints, cv::Mat &rotation,
+    cv::Mat &translation);
 
 /**
  * @brief Compute the inverse transform corresponding to a rotation

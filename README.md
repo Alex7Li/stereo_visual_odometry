@@ -10,14 +10,15 @@ roslaunch stereo_visual_odometry powerranger.launch
 3) From the top level directory:
 ```bash
 make
-vo 400
+vo 400 run1
 ```
-Where 400 is the number of frames you want to run for
+Where 400 is the number of frames you want to run for and run1 is the folder name
 
 Then when you finish, you can visualize the predicted path with
 ```bash
-python visualize_data.py
+python visualize_data.py run1
 ```
+Where run1 is the folder name
 
 # Structure
 
